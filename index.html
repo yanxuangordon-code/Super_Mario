@@ -1,9 +1,24 @@
-<!DOCTYPE html>
+
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body {
+                  background-color: white; /* Ensure the iframe has a white background */
+                }
+
+                
+              </style>
+                        </head>
+                        <body>
+                            <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Mario Adventure</title>
+    <title>Super Mario: Gordon's Quest</title>
     <style>
         * {
             margin: 0;
@@ -12,284 +27,258 @@
             font-family: 'Courier New', monospace;
         }
         body {
-            background: linear-gradient(to bottom, #5c94fc 0%, #5c94fc 70%, #003300 70%, #003300 100%);
+            background: linear-gradient(to bottom, #000428, #004e92);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             overflow: hidden;
+            color: white;
         }
 
-        /* ===== MENU STYLES ===== */
+        /* SCREENS */
         .screen {
             position: relative;
             width: 800px;
             height: 600px;
-            background: #5c94fc;
-            border: 4px solid #000;
+            background: #0a0a2a;
+            border: 5px solid #ffcc00;
+            border-radius: 10px;
             overflow: hidden;
             display: none;
+            box-shadow: 0 0 40px rgba(255, 204, 0, 0.5);
         }
 
+        /* MENU */
         #menuScreen {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="200" fill="%235c94fc"/><rect y="200" width="800" height="400" fill="%23003300"/></svg>') center/cover;
+            background: linear-gradient(to bottom, #0a0a2a, #003300);
         }
 
         .menu-title {
-            font-size: 56px;
-            color: #ff0000;
-            text-shadow: 4px 4px 0 #000;
-            margin-bottom: 30px;
-            letter-spacing: 2px;
+            font-size: 60px;
+            margin-bottom: 40px;
+            text-shadow: 0 0 10px #ff0000, 0 0 20px #ff5555;
+            letter-spacing: 4px;
         }
 
         .menu-btn {
-            background: #ff5555;
+            background: linear-gradient(to bottom, #ff5555, #cc0000);
             color: white;
             border: none;
-            padding: 14px 36px;
-            font-size: 22px;
-            margin: 12px 0;
-            width: 280px;
-            border-radius: 6px;
+            padding: 16px 50px;
+            font-size: 24px;
+            margin: 15px 0;
+            width: 300px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: background 0.3s;
+            box-shadow: 0 6px 0 #880000;
+            font-weight: bold;
         }
 
         .menu-btn:hover {
-            background: #ff7777;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 0 #880000;
         }
 
-        /* Login & Leaderboard */
+        /* AUTH SCREENS */
         .auth-screen {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0,0,0,0.85);
-            color: white;
-        }
-
-        .screen-title {
-            font-size: 36px;
-            margin-bottom: 20px;
-            color: gold;
+            background: rgba(5, 5, 25, 0.95);
         }
 
         input {
-            padding: 12px;
-            font-size: 18px;
-            width: 250px;
+            padding: 14px;
+            font-size: 22px;
+            width: 280px;
             text-align: center;
-            border: 2px solid #ff5555;
-            background: #222;
+            background: #111;
             color: white;
-            margin: 10px 0;
+            border: 2px solid #ff5555;
+            border-radius: 8px;
+            margin: 15px 0;
         }
 
+        /* LEADERBOARD */
         #leaderboardList {
             width: 90%;
-            max-height: 300px;
+            max-height: 350px;
             overflow-y: auto;
-            background: rgba(30,30,50,0.7);
-            border-radius: 8px;
-            padding: 15px;
+            background: rgba(10, 10, 40, 0.7);
+            border-radius: 10px;
+            padding: 20px;
             margin: 20px 0;
         }
 
         .lb-entry {
             display: flex;
             justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px solid #555;
+            padding: 12px 0;
+            border-bottom: 1px solid #444;
+            font-size: 20px;
         }
 
-        /* Settings Panel */
+        /* SETTINGS */
         #settingsPanel {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            color: white;
-            padding: 25px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 450px;
+            background: rgba(5, 5, 30, 0.95);
+            color: #ffcc00;
+            padding: 30px;
+            border-radius: 12px;
+            width: 85%;
+            max-width: 500px;
             display: none;
             z-index: 10;
-        }
-
-        .setting-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 12px 0;
-        }
-
-        .key-input {
-            padding: 8px 12px;
-            font-size: 16px;
-            width: 50px;
-            text-align: center;
-            text-transform: uppercase;
+            border: 3px solid #ff5555;
         }
 
         .close-btn {
             position: absolute;
-            top: 10px;
-            right: 15px;
+            top: 15px;
+            right: 20px;
             background: #ff5555;
             color: white;
             border: none;
-            width: 28px;
-            height: 28px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
+            font-size: 20px;
+            font-weight: bold;
             cursor: pointer;
         }
 
-        /* ===== GAME STYLES ===== */
+        /* GAME */
         #gameContainer canvas {
             display: block;
-            image-rendering: pixelated;
         }
 
-        #hud {
+        #hud, #bossHealthBar {
             position: absolute;
-            top: 10px;
-            left: 10px;
             color: white;
-            font-size: 20px;
             font-weight: bold;
             text-shadow: 2px 2px 0 #000;
-            z-index: 10;
-        }
-
-        #fireTimer {
-            color: #ff6600;
-            font-size: 18px;
-        }
-
-        #bossHealthBar {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 16px;
             z-index: 15;
-            display: none;
         }
+
+        #hud { top: 20px; left: 20px; font-size: 22px; }
+        #bossHealthBar { top: 20px; right: 20px; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 10px; display: none; }
 
         #bossHealth {
-            height: 12px;
-            background: #00ff00;
-            margin-top: 4px;
-            border-radius: 3px;
+            height: 16px;
+            background: linear-gradient(to right, #ff0000, #ffff00, #00ff00);
+            border-radius: 8px;
+            margin-top: 8px;
         }
 
-        #levelComplete, #gameOver {
+        #modal {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.92);
             color: white;
-            padding: 40px;
-            border-radius: 10px;
+            padding: 50px;
+            border-radius: 15px;
             text-align: center;
+            z-index: 30;
             display: none;
-            z-index: 20;
+            border: 4px solid #ffcc00;
         }
 
-        #levelComplete h1, #gameOver h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
+        #modal h2 {
+            font-size: 56px;
+            margin-bottom: 25px;
+            color: #ff5555;
+        }
+
+        #modal p {
+            font-size: 26px;
+            margin-bottom: 30px;
+            color: #ffcc00;
+            line-height: 1.4;
         }
 
         button {
-            font-size: 20px;
-            padding: 10px 30px;
+            font-size: 22px;
+            padding: 14px 50px;
             margin-top: 20px;
-            cursor: pointer;
-            background: #ff5555;
-            color: white;
+            background: linear-gradient(to bottom, #ffcc00, #ff9900);
+            color: #000;
             border: none;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 6px 0 #cc7a00;
         }
 
         button:hover {
-            background: #ff7777;
+            background: linear-gradient(to bottom, #ffdd55, #ffa500);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 0 #cc7a00;
         }
 
         #controls {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
-            color: white;
+            bottom: 20px;
+            left: 20px;
+            color: #aaa;
+            font-size: 16px;
+        }
+
+        #credit {
+            position: absolute;
+            bottom: 15px;
+            color: #888;
             font-size: 14px;
-            text-shadow: 1px 1px 0 #000;
         }
     </style>
 </head>
 <body>
-    <!-- 🎮 MAIN MENU -->
+    <!-- MAIN MENU -->
     <div id="menuScreen" class="screen">
-        <h1 class="menu-title">SUPER MARIO ADVENTURE</h1>
+        <h1 class="menu-title">GORDON'S QUEST</h1>
         <button class="menu-btn" onclick="showLogin()">▶️ START GAME</button>
         <button class="menu-btn" onclick="showLeaderboard()">🏆 LEADERBOARD</button>
         <button class="menu-btn" onclick="showSettings()">⚙️ SETTINGS</button>
-        <button class="menu-btn" onclick="showControls()">ℹ️ CONTROLS</button>
-        <div style="position:absolute; bottom:15px; color:white; font-size:14px;">
-            Made for Gordon — the smart player who fires with K!
-        </div>
+        <div id="credit">Made for Gordon — the smart player who fires with K!</div>
     </div>
 
-    <!-- 🔐 LOGIN -->
+    <!-- LOGIN -->
     <div id="loginScreen" class="screen auth-screen">
-        <h2 class="screen-title">SET PLAYER NAME</h2>
-        <input type="text" id="playerName" placeholder="Enter your name" value="Gordon">
-        <button class="menu-btn" onclick="startGame()">START ADVENTURE</button>
-        <button class="menu-btn" style="background:#555;" onclick="showMenu()">⬅️ BACK</button>
+        <h2 style="font-size:42px; margin-bottom:30px; color:#ff5555;">YOUR NAME, HERO</h2>
+        <input type="text" id="playerName" value="Gordon" maxlength="12">
+        <button class="menu-btn" onclick="startGame()">⚔️ BEGIN QUEST</button>
+        <button class="menu-btn" style="background:#555;" onclick="showMenu()">⬅️ MAIN MENU</button>
     </div>
 
-    <!-- 🏆 LEADERBOARD -->
+    <!-- LEADERBOARD -->
     <div id="leaderboardScreen" class="screen auth-screen">
-        <h2 class="screen-title">HALL OF FAME</h2>
+        <h2 style="font-size:38px; margin-bottom:30px; color:gold;">HALL OF LEGENDS</h2>
         <div id="leaderboardList"></div>
-        <button class="menu-btn" onclick="showMenu()">⬅️ BACK</button>
+        <button class="menu-btn" onclick="showMenu()">⬅️ MAIN MENU</button>
     </div>
 
-    <!-- ⚙️ SETTINGS -->
+    <!-- SETTINGS -->
     <div id="settingsPanel">
         <button class="close-btn" onclick="hideSettings()">✕</button>
-        <h3 style="margin-bottom:20px;">SETTINGS</h3>
-        <div class="setting-row">
+        <h3 style="font-size:28px; margin-bottom:25px; color:#ffcc00;">🎮 SETTINGS</h3>
+        <div style="display:flex; justify-content:space-between; margin:18px 0; font-size:20px;">
             <span>Fire Key:</span>
-            <input type="text" id="fireKeyInput" class="key-input" maxlength="1" value="K">
+            <input type="text" id="fireKeyInput" value="K" maxlength="1" style="padding:10px; width:60px; text-align:center; background:#111; color:white; border:2px solid #ff5555; border-radius:6px; font-size:18px;">
         </div>
-        <button class="menu-btn" onclick="saveSettings()" style="margin-top:20px;">SAVE</button>
+        <button class="menu-btn" onclick="saveSettings()" style="margin-top:25px;">💾 SAVE & APPLY</button>
     </div>
 
-    <!-- ℹ️ CONTROLS -->
-    <div id="controlsScreen" class="screen auth-screen">
-        <h2 class="screen-title">CONTROLS</h2>
-        <p style="font-size:18px; margin:15px 0; text-align:center;">
-            Move: <b>Arrow Keys</b> or <b>WASD</b><br>
-            Jump: <b>Space</b>, <b>W</b>, or <b>↑</b><br>
-            Fire: <span id="fireKeyDisplay">K</span> (configurable)<br>
-            Restart: <b>R</b>
-        </p>
-        <button class="menu-btn" onclick="showMenu()">⬅️ BACK</button>
-    </div>
-
-    <!-- ⬇️ GAME ⬇️ -->
+    <!-- GAME -->
     <div id="gameContainer" class="screen">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="hud">
@@ -297,35 +286,28 @@
             <div>Score: <span id="score">0</span></div>
             <div>Coins: <span id="coins">0</span></div>
             <div>Lives: <span id="lives">3</span></div>
-            <div id="fireTimer" style="display: none;">🔥 Fire: <span id="fireTime">15</span>s</div>
         </div>
         <div id="bossHealthBar">
             BOWSER<br>
-            <div id="bossHealth" style="width: 200px;"></div>
+            <div id="bossHealth" style="width:200px;"></div>
         </div>
-        <div id="levelComplete">
-            <h1>Level Complete!</h1>
-            <p id="levelScore"></p>
-            <button onclick="nextLevel()">Next Level</button>
+        <div id="modal">
+            <h2 id="modalTitle">Level Complete!</h2>
+            <p id="modalText">Score: 0</p>
+            <button id="modalBtn" onclick="handleModalAction()">Next</button>
         </div>
-        <div id="gameOver">
-            <h1 id="gameOverText">Game Over!</h1>
-            <p id="finalScore"></p>
-            <button onclick="showLeaderboardAfterGame()">View Leaderboard</button>
-            <button onclick="showMenu()">Main Menu</button>
-        </div>
-        <div id="controls">
-            WASD: Move | W/↑: Jump | K: Fire
-        </div>
+        <div id="controls">WASD / Arrows: Move | W/↑/Space: Jump | K: Fire</div>
     </div>
 
     <script>
-        // ===== CONFIG =====
+        // ===== CONFIG & STATE =====
         let currentPlayer = "Gordon";
-        let fireKey = "K"; // Your preference!
+        let fireKey = "K";
+        let LB_KEY = 'mario_gordon_final_v5';
+        let shake = { x: 0, y: 0, time: 0 };
+        let particles = [];
 
         // Initialize leaderboard
-        const LB_KEY = 'mario_leaderboard_final';
         if (!localStorage.getItem(LB_KEY)) {
             localStorage.setItem(LB_KEY, JSON.stringify([
                 {name: 'MARIO', score: 8000},
@@ -336,37 +318,37 @@
             ]));
         }
 
-        // ===== MENU LOGIC =====
+        // ===== SCREEN NAVIGATION =====
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
             document.getElementById(id).style.display = 'flex';
         }
 
-        function showMenu() { showScreen('menuScreen'); }
-        function showLogin() { showScreen('loginScreen'); }
-        function showLeaderboard() {
-            updateLeaderboard();
-            showScreen('leaderboardScreen');
+        function showMenu() { 
+            showScreen('menuScreen');
         }
-        function showControls() {
-            document.getElementById('fireKeyDisplay').textContent = fireKey;
-            showScreen('controlsScreen');
+
+        function showLogin() { 
+            showScreen('loginScreen');
         }
+
         function showSettings() {
             document.getElementById('fireKeyInput').value = fireKey;
             document.getElementById('settingsPanel').style.display = 'block';
         }
-        function hideSettings() {
+
+        function hideSettings() { 
             document.getElementById('settingsPanel').style.display = 'none';
         }
+
         function saveSettings() {
             const key = document.getElementById('fireKeyInput').value.toUpperCase();
             if (key && key.length === 1) {
                 fireKey = key;
-                document.getElementById('fireKeyDisplay').textContent = key;
                 hideSettings();
+                alert(`✅ Fire key set to: ${key}`);
             } else {
-                alert("Please enter a single key (e.g., K)");
+                alert("❌ Please enter a single key (e.g., K)");
             }
         }
 
@@ -374,32 +356,44 @@
             const lb = document.getElementById('leaderboardList');
             const scores = JSON.parse(localStorage.getItem(LB_KEY));
             lb.innerHTML = scores.map((s, i) => 
-                `<div class="lb-entry"><span>${i+1}. ${s.name}</span><span>${s.score}</span></div>`
+                `<div class="lb-entry">
+                    <span>${i+1}. ${s.name}</span>
+                    <span style="color:gold;">${s.score.toLocaleString()}</span>
+                </div>`
             ).join('');
         }
 
-        function startGame() {
-            currentPlayer = document.getElementById('playerName').value.trim() || "Gordon";
-            showScreen('gameContainer');
-            initGame();
-        }
-
-        function showLeaderboardAfterGame() {
+        function showLeaderboard() {
             updateLeaderboard();
             showScreen('leaderboardScreen');
         }
 
-        // Start with menu
+        function startGame() {
+            currentPlayer = document.getElementById('playerName').value.trim() || "Gordon";
+            if (currentPlayer.length < 2) {
+                alert("Name must be at least 2 characters!");
+                return;
+            }
+            showScreen('gameContainer');
+            if (!window.gameInitialized) {
+                initGame();
+                window.gameInitialized = true;
+            } else {
+                resetGame();
+            }
+        }
+
+        // Show menu first
         showScreen('menuScreen');
 
-        // ===== GAME CODE =====
+        // ===== GAME ENGINE =====
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
         const GRAVITY = 0.6;
         const JUMP_FORCE = -13;
         const MOVE_SPEED = 5;
-        
+
         let game = {
             score: 0,
             coins: 0,
@@ -409,9 +403,9 @@
             cameraX: 0,
             levelComplete: false
         };
-        
+
         let keys = {};
-        
+
         const player = {
             x: 100,
             y: 400,
@@ -428,253 +422,327 @@
             fireMaxTime: 900
         };
 
-        // 🐉 BOSS: BOWSER
         let boss = {
             active: false,
             x: 1800,
-            y: 480,
+            y: 550 - 64, // On ground
             width: 64,
             height: 64,
             health: 5,
             maxHealth: 5,
-            fireCooldown: 0,
-            direction: -1,
-            speed: 1
+            fireCooldown: 0
         };
 
-        // 🔥 ENEMY TYPES (NO ORANGE/PIRANHA)
-        const ENEMY_TYPES = {
-            GOOMBA: {
-                color: '#8B0000',
-                width: 32,
-                height: 32,
-                speed: 1.5
-            },
-            KOOPA: {
-                color: '#008000',
-                width: 32,
-                height: 32,
-                speed: 1,
-                canFly: false // future use
-            }
-        };
-
-        // ===== LEVELS: 11 TOTAL (Original 3 + 8 new + 1 boss) =====
-        const levels = [];
-
-        // Levels 1-3 (original, cleaned)
-        levels.push({
-            platforms: [
-                { x: 0, y: 550, width: 600, height: 50 },
-                { x: 700, y: 550, width: 400, height: 50 },
-                { x: 1200, y: 550, width: 600, height: 50 },
-                { x: 400, y: 450, width: 150, height: 20 },
-                { x: 700, y: 400, width: 150, height: 20 },
-                { x: 1000, y: 350, width: 150, height: 20 },
-                { x: 1300, y: 300, width: 150, height: 20 }
-            ],
-            coins: [{x:450,y:400}, {x:750,y:350}, {x:1050,y:300}, {x:1350,y:250}, {x:300,y:500}],
-            enemies: [
-                {x:800, y:518, type: 'GOOMBA', direction: 1},
-                {x:1300, y:518, type: 'KOOPA', direction: -1}
-            ],
-            powerUps: [{x:450, y:420, type: 'mushroom'}],
-            flag: {x:1700, y:550}
-        });
-
-        levels.push({
-            platforms: [
-                { x: 0, y: 550, width: 400, height: 50 },
-                { x: 500, y: 550, width: 200, height: 50 },
-                { x: 800, y: 550, width: 300, height: 50 },
-                { x: 1200, y: 550, width: 400, height: 50 },
-                { x: 1700, y: 550, width: 400, height: 50 },
-                { x: 300, y: 450, width: 120, height: 20 },
-                { x: 550, y: 400, width: 120, height: 20 },
-                { x: 800, y: 350, width: 120, height: 20 },
-                { x: 1050, y: 300, width: 120, height: 20 },
-                { x: 1300, y: 250, width: 120, height: 20 },
-                { x: 1550, y: 350, width: 120, height: 20 }
-            ],
-            coins: [{x:350,y:400}, {x:600,y:350}, {x:850,y:300}, {x:1100,y:250}, {x:1350,y:200}, {x:1600,y:300}],
-            enemies: [
-                {x:600, y:518, type: 'GOOMBA', direction: 1},
-                {x:1000, y:518, type: 'KOOPA', direction: -1}
-            ],
-            powerUps: [{x:850, y:320, type: 'fireFlower'}],
-            flag: {x:2000, y:550}
-        });
-
-        levels.push({
-            platforms: [
-                { x: 0, y: 550, width: 300, height: 50 },
-                { x: 400, y: 550, width: 150, height: 50 },
-                { x: 650, y: 550, width: 150, height: 50 },
-                { x: 900, y: 550, width: 200, height: 50 },
-                { x: 1200, y: 550, width: 150, height: 50 },
-                { x: 1450, y: 550, width: 150, height: 50 },
-                { x: 1700, y: 550, width: 500, height: 50 },
-                { x: 200, y: 450, width: 100, height: 20 },
-                { x: 400, y: 400, width: 100, height: 20 },
-                { x: 600, y: 350, width: 100, height: 20 },
-                { x: 800, y: 300, width: 100, height: 20 },
-                { x: 1000, y: 350, width: 100, height: 20 },
-                { x: 1200, y: 400, width: 100, height: 20 },
-                { x: 1400, y: 450, width: 100, height: 20 }
-            ],
-            coins: [{x:250,y:400}, {x:450,y:350}, {x:650,y:300}, {x:1900,y:500}],
-            enemies: [
-                {x:450, y:518, type: 'GOOMBA', direction: 1},
-                {x:750, y:518, type: 'KOOPA', direction: -1}
-            ],
-            powerUps: [{x:250, y:420, type: 'mushroom'}],
-            flag: {x:2100, y:550}
-        });
-
-        // Levels 4-9: Procedurally generated
-        for (let i = 4; i <= 9; i++) {
-            const platformCount = 10 + i;
-            const platforms = [{x:0, y:550, width:300, height:50}];
-            const coins = [];
-            const enemies = [];
-
-            // Generate platforms
-            for (let j = 1; j < platformCount; j++) {
-                const last = platforms[j-1];
-                const spacing = 120 + Math.random() * 80;
-                const x = last.x + last.width + spacing;
-                const y = 550 - (j * 25 + Math.random() * 40);
-                platforms.push({
-                    x,
-                    y,
-                    width: 100 + Math.random() * 100,
-                    height: 20
-                });
-                
-                // Add coin on platform
-                if (j % 2 === 0) {
-                    coins.push({
-                        x: x + 20 + Math.random() * 60,
-                        y: y - 20
-                    });
-                }
-            }
-            
-            // Add ground at end
-            platforms.push({
-                x: platforms[platforms.length-1].x + 300,
-                y: 550,
-                width: 500,
-                height: 50
-            });
-
-            // Add enemies (Goombas/Koopas)
-            for (let k = 0; k < 2 + Math.floor(i/2); k++) {
-                const type = Math.random() > 0.5 ? 'GOOMBA' : 'KOOPA';
-                enemies.push({
-                    x: 500 + k * 250,
-                    y: 518,
-                    type,
-                    direction: Math.random() > 0.5 ? 1 : -1
-                });
-            }
-
-            levels.push({
-                platforms,
-                coins,
-                enemies,
-                powerUps: [
-                    {x: 400, y: 500, type: (i % 2 === 0) ? 'mushroom' : 'fireFlower'}
+        // ===== LEVELS WITH ENEMIES ON PLATFORMS =====
+        const levels = [
+            // Level 1
+            {
+                platforms: [
+                    {x:0,y:550,w:600,h:50},
+                    {x:700,y:550,w:400,h:50},
+                    {x:1200,y:550,w:600,h:50},
+                    {x:400,y:450,w:150,h:20},
+                    {x:700,y:400,w:150,h:20},
+                    {x:1000,y:350,w:150,h:20}
                 ],
-                flag: {x: platforms[platforms.length-1].x + 200, y: 550}
-            });
-        }
+                coins: [
+                    {x:450,y:450-20},
+                    {x:750,y:400-20},
+                    {x:1050,y:350-20},
+                    {x:300,y:550-20}
+                ],
+                enemies: [
+                    {x:850, y:550-32, type:'GOOMBA'},
+                    {x:1350, y:550-32, type:'KOOPA'}
+                ],
+                powerUps: [{x:450, y:450-32, type:'mushroom'}],
+                flag: {x:1700,y:550}
+            },
+            // Level 2
+            {
+                platforms: [
+                    {x:0,y:550,w:400,h:50},
+                    {x:500,y:550,w:200,h:50},
+                    {x:800,y:550,w:300,h:50},
+                    {x:1200,y:550,w:400,h:50},
+                    {x:1700,y:550,w:400,h:50},
+                    {x:300,y:450,w:120,h:20},
+                    {x:550,y:400,w:120,h:20}
+                ],
+                coins: [
+                    {x:350,y:450-20},
+                    {x:600,y:400-20},
+                    {x:850,y:550-20},
+                    {x:1100,y:550-20}
+                ],
+                enemies: [
+                    {x:650, y:550-32, type:'GOOMBA'},
+                    {x:1050, y:550-32, type:'KOOPA'}
+                ],
+                powerUps: [{x:850, y:550-32, type:'fireFlower'}],
+                flag: {x:2000,y:550}
+            },
+            // Level 3
+            {
+                platforms: [
+                    {x:0,y:550,w:300,h:50},
+                    {x:400,y:550,w:150,h:50},
+                    {x:650,y:550,w:150,h:50},
+                    {x:900,y:550,w:200,h:50},
+                    {x:1200,y:550,w:150,h:50},
+                    {x:200,y:450,w:100,h:20},
+                    {x:400,y:400,w:100,h:20}
+                ],
+                coins: [
+                    {x:250,y:450-20},
+                    {x:450,y:400-20},
+                    {x:650,y:550-20},
+                    {x:1900,y:550-20}
+                ],
+                enemies: [
+                    {x:450, y:550-32, type:'GOOMBA'},
+                    {x:750, y:550-32, type:'KOOPA'}
+                ],
+                powerUps: [{x:250, y:450-32, type:'mushroom'}],
+                flag: {x:2100,y:550}
+            },
+            // Level 4
+            {
+                platforms: [
+                    {x:0,y:550,w:300,h:50},
+                    {x:400,y:500,w:100,h:20},
+                    {x:600,y:450,w:100,h:20},
+                    {x:800,y:400,w:100,h:20},
+                    {x:1000,y:450,w:100,h:20},
+                    {x:1200,y:500,w:100,h:20},
+                    {x:1400,y:550,w:500,h:50}
+                ],
+                coins: [
+                    {x:450,y:500-20},
+                    {x:650,y:450-20},
+                    {x:850,y:400-20},
+                    {x:1050,y:450-20}
+                ],
+                enemies: [
+                    {x:450, y:500-32, type:'GOOMBA'},
+                    {x:650, y:450-32, type:'KOOPA'},
+                    {x:850, y:400-32, type:'GOOMBA'}
+                ],
+                flag: {x:1800,y:550}
+            },
+            // Level 5
+            {
+                platforms: [
+                    {x:0,y:550,w:200,h:50},
+                    {x:300,y:500,w:80,h:20},
+                    {x:500,y:450,w:80,h:20},
+                    {x:700,y:400,w:80,h:20},
+                    {x:900,y:350,w:80,h:20},
+                    {x:1100,y:400,w:80,h:20},
+                    {x:1300,y:450,w:80,h:20},
+                    {x:1500,y:550,w:400,h:50}
+                ],
+                coins: [
+                    {x:340,y:500-20},
+                    {x:540,y:450-20},
+                    {x:740,y:400-20},
+                    {x:940,y:350-20}
+                ],
+                enemies: [
+                    {x:350, y:500-32, type:'GOOMBA'},
+                    {x:550, y:450-32, type:'KOOPA'},
+                    {x:750, y:400-32, type:'GOOMBA'},
+                    {x:950, y:350-32, type:'KOOPA'}
+                ],
+                flag: {x:1800,y:550}
+            },
+            // Level 6
+            {
+                platforms: [
+                    {x:0,y:550,w:250,h:50},
+                    {x:350,y:500,w:90,h:20},
+                    {x:550,y:450,w:90,h:20},
+                    {x:750,y:400,w:90,h:20},
+                    {x:950,y:350,w:90,h:20},
+                    {x:1150,y:400,w:90,h:20},
+                    {x:1350,y:450,w:90,h:20},
+                    {x:1550,y:550,w:350,h:50}
+                ],
+                coins: [
+                    {x:395,y:500-20},
+                    {x:595,y:450-20},
+                    {x:795,y:400-20},
+                    {x:995,y:350-20},
+                    {x:1195,y:400-20}
+                ],
+                enemies: [
+                    {x:400, y:500-32, type:'GOOMBA'},
+                    {x:600, y:450-32, type:'KOOPA'},
+                    {x:800, y:400-32, type:'GOOMBA'},
+                    {x:1000, y:350-32, type:'KOOPA'}
+                ],
+                flag: {x:1800,y:550}
+            },
+            // Level 7
+            {
+                platforms: [
+                    {x:0,y:550,w:300,h:50},
+                    {x:400,y:520,w:100,h:20},
+                    {x:600,y:490,w:100,h:20},
+                    {x:800,y:460,w:100,h:20},
+                    {x:1000,y:490,w:100,h:20},
+                    {x:1200,y:520,w:100,h:20},
+                    {x:1400,y:550,w:500,h:50}
+                ],
+                coins: [
+                    {x:450,y:520-20},
+                    {x:650,y:490-20},
+                    {x:850,y:460-20},
+                    {x:1050,y:490-20},
+                    {x:1250,y:520-20}
+                ],
+                enemies: [
+                    {x:450, y:520-32, type:'GOOMBA'},
+                    {x:650, y:490-32, type:'KOOPA'},
+                    {x:850, y:460-32, type:'GOOMBA'}
+                ],
+                flag: {x:1800,y:550}
+            },
+            // Level 8
+            {
+                platforms: [
+                    {x:0,y:550,w:200,h:50},
+                    {x:300,y:530,w:80,h:20},
+                    {x:500,y:510,w:80,h:20},
+                    {x:700,y:490,w:80,h:20},
+                    {x:900,y:510,w:80,h:20},
+                    {x:1100,y:530,w:80,h:20},
+                    {x:1300,y:550,w:300,h:50}
+                ],
+                coins: [
+                    {x:340,y:530-20},
+                    {x:540,y:510-20},
+                    {x:740,y:490-20},
+                    {x:940,y:510-20}
+                ],
+                enemies: [
+                    {x:350, y:530-32, type:'GOOMBA'},
+                    {x:550, y:510-32, type:'KOOPA'},
+                    {x:750, y:490-32, type:'GOOMBA'},
+                    {x:950, y:510-32, type:'KOOPA'}
+                ],
+                flag: {x:1500,y:550}
+            },
+            // Level 9
+            {
+                platforms: [
+                    {x:0,y:550,w:250,h:50},
+                    {x:350,y:540,w:90,h:20},
+                    {x:550,y:530,w:90,h:20},
+                    {x:750,y:520,w:90,h:20},
+                    {x:950,y:530,w:90,h:20},
+                    {x:1150,y:540,w:90,h:20},
+                    {x:1350,y:550,w:350,h:50}
+                ],
+                coins: [
+                    {x:395,y:540-20},
+                    {x:595,y:530-20},
+                    {x:795,y:520-20},
+                    {x:995,y:530-20}
+                ],
+                enemies: [
+                    {x:400, y:540-32, type:'GOOMBA'},
+                    {x:600, y:530-32, type:'KOOPA'},
+                    {x:800, y:520-32, type:'GOOMBA'}
+                ],
+                flag: {x:1600,y:550}
+            },
+            // Level 10 - BOSS
+            {
+                platforms: [
+                    {x:0,y:550,w:800,h:50},
+                    {x:1000,y:550,w:800,h:50},
+                    {x:400,y:450,w:120,h:20},
+                    {x:1400,y:450,w:120,h:20}
+                ],
+                coins: [],
+                enemies: [],
+                isBossLevel: true,
+                flag: {x:1700,y:550}
+            },
+            // Level 11 - VICTORY
+            {
+                platforms: [{x:0,y:550,w:500,h:50},{x:600,y:550,w:500,h:50}],
+                flag: {x:1000,y:550}
+            }
+        ];
 
-        // Level 10: BOSS BATTLE 🐉
-        levels.push({
-            platforms: [
-                { x: 0, y: 550, width: 800, height: 50 },
-                { x: 1000, y: 550, width: 800, height: 50 },
-                { x: 400, y: 450, width: 120, height: 20 },
-                { x: 1400, y: 450, width: 120, height: 20 }
-            ],
-            coins: [],
-            enemies: [],
-            powerUps: [],
-            flag: {x: 1700, y: 550},
-            isBossLevel: true
-        });
+        let platforms = [], coins = [], enemies = [], powerUps = [], fireballs = [], bossFireballs = [];
 
-        // Level 11: Final flag (win)
-        levels.push({
-            platforms: [
-                { x: 0, y: 550, width: 500, height: 50 },
-                { x: 600, y: 550, width: 500, height: 50 }
-            ],
-            coins: [],
-            enemies: [],
-            powerUps: [],
-            flag: {x: 1000, y: 550}
-        });
-
-        let currentLevelData = {};
-        let platforms = [];
-        let coins = [];
-        let enemies = [];
-        let powerUps = [];
-        let flag = {};
-        let fireballs = [];
-        let bossFireballs = []; // Bowser's fire
-
-        // ===== INPUT =====
+        // ===== INPUT HANDLING =====
         document.addEventListener('keydown', (e) => {
             keys[e.code] = true;
+            if (e.code === 'KeyA') keys['ArrowLeft'] = true;
+            if (e.code === 'KeyD') keys['ArrowRight'] = true;
             
-            // WASD mapping
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys['ArrowLeft'] = true;
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') keys['ArrowRight'] = true;
-            
-            // Jump: Space, W, ↑
             if ((e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') && player.grounded) {
                 player.velY = JUMP_FORCE;
                 player.grounded = false;
+                screenShake(3, 8);
             }
             
-            // Fire
             if (e.key.toUpperCase() === fireKey && player.powerUp === 'fire') {
                 shootFireball();
             }
             
-            // Restart
-            if (e.code === 'KeyR') restartGame();
+            if (e.key.toUpperCase() === fireKey && boss.active) {
+                boss.health--;
+                createParticles(boss.x, boss.y, 15, { color: '#ff5555', size: 3, life: 30 });
+                screenShake(8, 15);
+                if (boss.health <= 0) {
+                    boss.active = false;
+                    game.score += 5000;
+                    updateHUD();
+                    setTimeout(() => completeLevel(), 500);
+                }
+            }
         });
 
         document.addEventListener('keyup', (e) => {
             keys[e.code] = false;
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys['ArrowLeft'] = false;
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') keys['ArrowRight'] = false;
+            if (e.code === 'KeyA') keys['ArrowLeft'] = false;
+            if (e.code === 'KeyD') keys['ArrowRight'] = false;
         });
 
+        // ===== GAME FUNCTIONS =====
         function initGame() {
+            resetGame();
+            gameLoop();
+        }
+
+        function resetGame() {
+            game = { score: 0, coins: 0, lives: 3, currentLevel: 1, gameOver: false, cameraX: 0, levelComplete: false };
+            player.powerUp = 'small';
+            player.invincible = false;
+            player.invincibleTimer = 0;
+            player.fireTimer = 0;
             loadLevel(1);
             updateHUD();
-            gameLoop();
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('bossHealthBar').style.display = 'none';
         }
 
         function loadLevel(levelNum) {
             const level = levels[levelNum - 1];
             if (!level) {
-                // Win!
-                showVictory();
+                showModal('🏆 QUEST COMPLETE!', `You saved the kingdom!\nFinal Score: ${game.score.toLocaleString()}`, 'Main Menu', 'menu');
                 return;
             }
             
-            currentLevelData = JSON.parse(JSON.stringify(level));
-            platforms = currentLevelData.platforms;
-            coins = currentLevelData.coins.map(c => ({...c, collected: false}));
-            enemies = currentLevelData.enemies.map(e => ({...e, active: true}));
-            powerUps = currentLevelData.powerUps.map(p => ({...p, collected: false}));
-            flag = currentLevelData.flag;
+            platforms = level.platforms.map(p => ({...p}));
+            coins = level.coins ? level.coins.map(c => ({...c, collected: false})) : [];
+            enemies = level.enemies ? level.enemies.map(e => ({...e, active: true, direction: 1})) : [];
+            powerUps = level.powerUps ? level.powerUps.map(p => ({...p, collected: false})) : [];
             fireballs = [];
             bossFireballs = [];
             
@@ -685,176 +753,94 @@
             game.cameraX = 0;
             game.levelComplete = false;
             
-            // Reset boss
             boss = {
                 active: level.isBossLevel,
                 x: 1800,
-                y: 480,
+                y: 550 - 64,
                 width: 64,
                 height: 64,
                 health: 5,
                 maxHealth: 5,
-                fireCooldown: 0,
-                direction: -1,
-                speed: 1
+                fireCooldown: 0
             };
             
             document.getElementById('bossHealthBar').style.display = level.isBossLevel ? 'block' : 'none';
         }
 
+        // ✅ FIXED FIREBALLS: HORIZONTAL SHOOTING
         function shootFireball() {
-            const direction = (keys['ArrowLeft'] || keys['KeyA']) ? -1 : 1;
+            const dir = (keys['ArrowLeft'] || keys['KeyA']) ? -1 : 1;
             fireballs.push({
-                x: player.x + (direction > 0 ? player.width : 0),
-                y: player.y + player.height / 2,
-                velX: direction * 8,
-                velY: -3,
+                x: player.x + (dir > 0 ? player.width : 0),
+                y: player.y + player.height / 2,  // Center height
+                vx: dir * 8,                     // Horizontal speed
+                vy: 0.5,                          // Slight downward (Mario-style arc)
                 radius: 8
             });
+            
+            // Fire trail particles
+            createParticles(
+                player.x + (dir > 0 ? player.width : 0), 
+                player.y + 16, 
+                5, 
+                { color: '#ff6600', size: 2, life: 15 }
+            );
         }
 
-        function bossShootFire() {
-            if (boss.fireCooldown <= 0) {
-                bossFireballs.push({
-                    x: boss.x,
-                    y: boss.y + 32,
-                    velX: -5,
-                    velY: (Math.random() - 0.5) * 6,
-                    radius: 10
+        function screenShake(intensity = 5, duration = 10) {
+            shake.time = duration;
+            shake.intensity = intensity;
+        }
+
+        function createParticles(x, y, count, options = {}) {
+            const { color = '#ffffff', size = 2, life = 20 } = options;
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: size + Math.random() * size,
+                    life,
+                    color
                 });
-                boss.fireCooldown = 120; // 2 seconds
             }
         }
 
-        // ===== DRAWING =====
-        function drawPlayer() {
-            let height = 32;
-            if (player.powerUp === 'big' || player.powerUp === 'fire') height = 48;
-            
-            if (player.invincible && Math.floor(Date.now() / 100) % 2 === 0) ctx.globalAlpha = 0.5;
-            
-            // Hat
-            ctx.fillStyle = player.powerUp === 'fire' ? '#fff' : '#ff0000';
-            ctx.fillRect(player.x - game.cameraX, player.y, player.width, 12);
-            
-            // Body
-            ctx.fillStyle = player.powerUp === 'fire' ? '#fff' : '#0000ff';
-            ctx.fillRect(player.x - game.cameraX + 6, player.y + 12, 20, 12);
-            
-            // Face
-            ctx.fillStyle = '#ffcc99';
-            ctx.fillRect(player.x - game.cameraX + 8, player.y + 24, 16, 10);
-            
-            // Legs
-            ctx.fillStyle = player.powerUp === 'fire' ? '#fff' : '#0000ff';
-            ctx.fillRect(player.x - game.cameraX + 4, player.y + 34, 10, 6);
-            ctx.fillRect(player.x - game.cameraX + 18, player.y + 34, 10, 6);
-            
-            ctx.globalAlpha = 1;
+        function updateShake() {
+            if (shake.time > 0) {
+                shake.x = (Math.random() - 0.5) * shake.intensity;
+                shake.y = (Math.random() - 0.5) * shake.intensity;
+                shake.time--;
+            } else {
+                shake.x = 0;
+                shake.y = 0;
+            }
         }
 
-        function drawBoss() {
-            if (!boss.active) return;
-            
-            ctx.fillStyle = '#8B0000';
-            ctx.fillRect(boss.x - game.cameraX, boss.y, boss.width, boss.height);
-            
-            // Eyes
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(boss.x - game.cameraX + 12, boss.y + 12, 8, 8);
-            ctx.fillRect(boss.x - game.cameraX + 44, boss.y + 12, 8, 8);
-            
-            // Pupils
-            ctx.fillStyle = '#000';
-            ctx.fillRect(boss.x - game.cameraX + 14, boss.y + 14, 3, 3);
-            ctx.fillRect(boss.x - game.cameraX + 46, boss.y + 14, 3, 3);
-            
-            // Horns
-            ctx.fillStyle = '#ffcc00';
-            ctx.fillRect(boss.x - game.cameraX + 8, boss.y - 10, 6, 12);
-            ctx.fillRect(boss.x - game.cameraX + 50, boss.y - 10, 6, 12);
-        }
-
-        function drawEnemies() {
-            enemies.forEach(e => {
-                if (!e.active) return;
-                const type = ENEMY_TYPES[e.type];
-                if (!type) return;
-                
-                ctx.fillStyle = type.color;
-                ctx.fillRect(e.x - game.cameraX, e.y, type.width, type.height);
-                
-                // Eyes
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(e.x - game.cameraX + 8, e.y + 8, 6, 6);
-                ctx.fillRect(e.x - game.cameraX + 18, e.y + 8, 6, 6);
-                
-                ctx.fillStyle = '#000';
-                ctx.fillRect(e.x - game.cameraX + 10, e.y + 10, 2, 2);
-                ctx.fillRect(e.x - game.cameraX + 20, e.y + 10, 2, 2);
+        function updateParticles() {
+            particles = particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.1;
+                p.life--;
+                p.radius *= 0.98;
+                return p.life > 0 && p.x > -100 && p.x < 900 && p.y > -100 && p.y < 700;
             });
         }
 
-        function drawFireballs() {
-            ctx.fillStyle = '#ff6600';
-            fireballs.forEach(f => {
+        function drawParticles() {
+            particles.forEach(p => {
+                const alpha = p.life / p.life;
+                ctx.globalAlpha = 0.8;
+                ctx.fillStyle = p.color;
                 ctx.beginPath();
-                ctx.arc(f.x - game.cameraX, f.y, f.radius, 0, Math.PI * 2);
+                ctx.arc(p.x - game.cameraX + shake.x, p.y + shake.y, p.radius, 0, Math.PI * 2);
                 ctx.fill();
-            });
-            
-            ctx.fillStyle = '#ff0000';
-            bossFireballs.forEach(f => {
-                ctx.beginPath();
-                ctx.arc(f.x - game.cameraX, f.y, f.radius, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.globalAlpha = 1;
             });
         }
 
-        function drawPlatforms() {
-            platforms.forEach(p => {
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(p.x - game.cameraX, p.y, p.width, p.height);
-                
-                ctx.fillStyle = '#A0522D';
-                for (let i = 0; i < p.width; i += 50) {
-                    ctx.fillRect(p.x - game.cameraX + i, p.y, 48, 10);
-                }
-            });
-        }
-
-        function drawCoins() {
-            coins.forEach(c => {
-                if (!c.collected) {
-                    ctx.fillStyle = '#FFD700';
-                    ctx.beginPath();
-                    ctx.arc(c.x - game.cameraX, c.y, 10, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    ctx.fillStyle = '#FFA500';
-                    ctx.beginPath();
-                    ctx.arc(c.x - game.cameraX, c.y, 6, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            });
-        }
-
-        function drawFlag() {
-            ctx.fillStyle = '#228B22';
-            ctx.fillRect(flag.x - game.cameraX, flag.y - 100, 8, 100);
-            
-            ctx.fillStyle = '#ff0000';
-            ctx.beginPath();
-            ctx.moveTo(flag.x - game.cameraX + 8, flag.y - 100);
-            ctx.lineTo(flag.x - game.cameraX + 48, flag.y - 85);
-            ctx.lineTo(flag.x - game.cameraX + 8, flag.y - 70);
-            ctx.closePath();
-            ctx.fill();
-        }
-
-        // ===== UPDATES =====
         function updatePlayer() {
-            // Movement
             player.velX = 0;
             if (keys['ArrowLeft'] || keys['KeyA']) player.velX = -MOVE_SPEED;
             else if (keys['ArrowRight'] || keys['KeyD']) player.velX = MOVE_SPEED;
@@ -864,11 +850,10 @@
             player.y += player.velY;
             
             player.grounded = false;
-            
             const h = player.powerUp === 'big' || player.powerUp === 'fire' ? 48 : 32;
             
             platforms.forEach(p => {
-                if (player.x + player.width > p.x && player.x < p.x + p.width &&
+                if (player.x + 32 > p.x && player.x < p.x + p.w &&
                     player.y + h > p.y && player.y + h < p.y + 20 && player.velY >= 0) {
                     player.y = p.y - h;
                     player.velY = 0;
@@ -876,75 +861,49 @@
                 }
             });
             
-            if (player.y > canvas.height) loseLife();
+            if (player.y > 650) loseLife();
             
             game.cameraX = Math.max(0, player.x - 400);
         }
 
-        function updateBoss() {
-            if (!boss.active) return;
-            
-            // Move toward player (slowly)
-            if (Math.abs(boss.x - player.x) > 100) {
-                boss.x += boss.speed * boss.direction;
-            }
-            
-            // Fire every 2s
-            if (boss.fireCooldown > 0) boss.fireCooldown--;
-            else bossShootFire();
-            
-            // Boss health bar
-            const healthWidth = (boss.health / boss.maxHealth) * 200;
-            document.getElementById('bossHealth').style.width = `${Math.max(0, healthWidth)}px`;
-            document.getElementById('bossHealth').style.background = 
-                boss.health <= 2 ? '#ff0000' : 
-                boss.health <= 3 ? '#ffaa00' : '#00ff00';
-            
-            // Hit boss?
-            fireballs.forEach((f, i) => {
-                if (f.x > boss.x && f.x < boss.x + boss.width &&
-                    f.y > boss.y && f.y < boss.y + boss.height) {
-                    boss.health--;
-                    fireballs.splice(i, 1);
-                    
-                    if (boss.health <= 0) {
-                        boss.active = false;
-                        game.score += 5000;
-                        updateHUD();
-                    }
-                }
-            });
-            
-            // Boss hits player
-            if (player.x + player.width > boss.x &&
-                player.x < boss.x + boss.width &&
-                player.y + (player.powerUp === 'big' || player.powerUp === 'fire' ? 48 : 32) > boss.y &&
-                player.y < boss.y + boss.height) {
-                hitPlayer();
-            }
-        }
-
+        // ✅ ENEMIES ON PLATFORMS
         function updateEnemies() {
             enemies.forEach(e => {
                 if (!e.active) return;
-                const type = ENEMY_TYPES[e.type];
-                if (!type) return;
-                
-                e.x += type.speed * e.direction;
-                
-                // Reverse at edges
-                if (e.x < 0 || e.x > 2200) e.direction *= -1;
-                
+
+                // Move
+                e.x += (e.type === 'GOOMBA' ? 1.5 : 1) * e.direction;
+
+                // Find platform under enemy
+                let platform = null;
+                platforms.forEach(p => {
+                    if (e.x + 32 > p.x && e.x < p.x + p.w &&
+                        e.y + 32 >= p.y - 5 && e.y + 32 <= p.y + 5) {
+                        platform = p;
+                    }
+                });
+
+                if (platform) {
+                    e.y = platform.y - 32; // ✅ SNAP TO PLATFORM
+                    if (e.x <= platform.x || e.x + 32 >= platform.x + platform.w) {
+                        e.direction *= -1;
+                    }
+                } else {
+                    e.y += GRAVITY;
+                    if (e.y > 600) e.active = false;
+                }
+
                 // Hit detection
                 const h = player.powerUp === 'big' || player.powerUp === 'fire' ? 48 : 32;
-                if (player.x + player.width > e.x && player.x < e.x + type.width &&
-                    player.y + h > e.y && player.y < e.y + type.height) {
-                    
+                if (player.x + 32 > e.x && player.x < e.x + 32 &&
+                    player.y + h > e.y && player.y < e.y + 32) {
                     if (player.velY > 0 && player.y + h < e.y + 20) {
                         e.active = false;
                         player.velY = -8;
                         game.score += 200;
                         updateHUD();
+                        screenShake(4, 10);
+                        createParticles(e.x + 16, e.y + 32, 8, { color: '#aaaaaa', size: 2, life: 20 });
                     } else {
                         hitPlayer();
                     }
@@ -952,71 +911,121 @@
             });
         }
 
+        function updateBoss() {
+            if (!boss.active) return;
+            
+            if (boss.fireCooldown > 0) {
+                boss.fireCooldown--;
+            } else {
+                bossFireballs.push({
+                    x: boss.x,
+                    y: boss.y + 32,
+                    vx: -4,
+                    vy: 0,
+                    radius: 10
+                });
+                boss.fireCooldown = 120;
+                screenShake(5, 10);
+            }
+            
+            // Health bar
+            const w = (boss.health / boss.maxHealth) * 200;
+            document.getElementById('bossHealth').style.width = `${Math.max(0, w)}px`;
+        }
+
+        // ✅ FIXED: FIREBALLS NOW KILL ENEMIES
         function updateFireballs() {
-            // Player fireballs
             fireballs = fireballs.filter(f => {
-                f.x += f.velX;
-                f.y += f.velY + GRAVITY * 0.3;
-                
-                // Hit enemy?
-                let hit = enemies.findIndex(e => 
-                    e.active &&
-                    f.x > e.x && f.x < e.x + ENEMY_TYPES[e.type].width &&
-                    f.y > e.y && f.y < e.y + ENEMY_TYPES[e.type].height
-                );
-                if (hit !== -1) {
-                    enemies[hit].active = false;
-                    game.score += 200;
-                    updateHUD();
-                    return false;
+                f.x += f.vx;
+                f.y += f.vy + 0.3; // Gravity
+
+                // 🔥 HIT ENEMIES WITH FIREBALLS
+                for (let i = 0; i < enemies.length; i++) {
+                    const e = enemies[i];
+                    if (e.active && 
+                        f.x > e.x && 
+                        f.x < e.x + 32 && 
+                        f.y > e.y && 
+                        f.y < e.y + 32) {
+                        e.active = false;
+                        game.score += 200;
+                        updateHUD();
+                        screenShake(4, 10);
+                        createParticles(e.x + 16, e.y + 16, 10, { 
+                            color: '#ff5555', 
+                            size: 3, 
+                            life: 30 
+                        });
+                        return false; // Remove fireball
+                    }
                 }
-                
+
                 return f.y < 600 && f.x > -100 && f.x < 2200;
             });
             
-            // Boss fireballs
+            // Boss fireballs (player collision)
             bossFireballs = bossFireballs.filter(f => {
-                f.x += f.velX;
-                f.y += f.velY + GRAVITY * 0.3;
+                f.x += f.vx;
+                f.y += f.vy + 0.3;
                 
-                // Hit player?
                 const h = player.powerUp === 'big' || player.powerUp === 'fire' ? 48 : 32;
                 if (!player.invincible &&
-                    player.x + player.width > f.x - f.radius &&
+                    player.x + 32 > f.x - f.radius &&
                     player.x < f.x + f.radius &&
                     player.y + h > f.y - f.radius &&
                     player.y < f.y + f.radius) {
                     hitPlayer();
                     return false;
                 }
-                
                 return f.y < 600 && f.x > -100;
+            });
+        }
+
+        function updatePowerUps() {
+            powerUps.forEach(p => {
+                if (!p.collected) {
+                    const dx = player.x + 16 - p.x;
+                    const dy = player.y + (player.powerUp === 'big' ? 24 : 16) - p.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < 25) {
+                        p.collected = true;
+                        if (p.type === 'mushroom') {
+                            if (player.powerUp === 'small') {
+                                player.powerUp = 'big';
+                                player.y -= 16;
+                            }
+                            game.score += 500;
+                        } else if (p.type === 'fireFlower') {
+                            const wasSmall = player.powerUp === 'small';
+                            player.powerUp = 'fire';
+                            player.fireTimer = player.fireMaxTime;
+                            if (wasSmall) player.y -= 16;
+                            game.score += 1000;
+                        }
+                        updateHUD();
+                        createParticles(p.x, p.y, 20, { 
+                            color: p.type === 'fireFlower' ? '#00ff00' : '#ff0000', 
+                            size: 3, 
+                            life: 40 
+                        });
+                    }
+                }
             });
         }
 
         function updateCoins() {
             coins.forEach(c => {
                 if (!c.collected) {
-                    const dx = player.x + player.width/2 - c.x;
-                    const dy = player.y + (player.powerUp === 'big' ? 48 : 32)/2 - c.y;
+                    const dx = player.x + 16 - c.x;
+                    const dy = player.y + (player.powerUp === 'big' ? 24 : 16) - c.y;
                     if (Math.sqrt(dx*dx + dy*dy) < 20) {
                         c.collected = true;
                         game.coins++;
                         game.score += 100;
                         updateHUD();
+                        createParticles(c.x, c.y, 10, { color: '#ffd700', size: 2, life: 30 });
                     }
                 }
             });
-        }
-
-        function checkFlag() {
-            if (!boss.active && player.x + player.width > flag.x && player.x < flag.x + 8) {
-                game.levelComplete = true;
-                game.score += 1000;
-                updateHUD();
-                document.getElementById('levelScore').textContent = `Score: ${game.score}`;
-                document.getElementById('levelComplete').style.display = 'block';
-            }
         }
 
         function hitPlayer() {
@@ -1025,7 +1034,6 @@
                 player.invincible = true;
                 player.invincibleTimer = 120;
                 player.fireTimer = 0;
-                document.getElementById('fireTimer').style.display = 'none';
             } else if (player.powerUp === 'big') {
                 player.powerUp = 'small';
                 player.y += 16;
@@ -1034,6 +1042,7 @@
             } else {
                 loseLife();
             }
+            screenShake(8, 15);
         }
 
         function loseLife() {
@@ -1041,17 +1050,9 @@
             updateHUD();
             
             if (game.lives <= 0) {
-                // Save score
-                const scores = JSON.parse(localStorage.getItem(LB_KEY));
-                scores.push({name: currentPlayer, score: game.score});
-                scores.sort((a, b) => b.score - a.score);
-                localStorage.setItem(LB_KEY, JSON.stringify(scores.slice(0, 10)));
-                
-                // Go to main menu (your request!)
+                saveScore();
                 showMenu();
-                document.getElementById('gameOverText').textContent = 'Game Over!';
-                document.getElementById('finalScore').textContent = `Final Score: ${game.score}`;
-                document.getElementById('gameOver').style.display = 'block';
+                showModal('Game Over!', `Final Score: ${game.score.toLocaleString()}`, 'Main Menu', 'menu');
             } else {
                 player.invincible = true;
                 player.invincibleTimer = 120;
@@ -1059,22 +1060,29 @@
             }
         }
 
-        function nextLevel() {
-            game.currentLevel++;
-            if (game.currentLevel > levels.length) {
-                showVictory();
-            } else {
-                document.getElementById('levelComplete').style.display = 'none';
-                loadLevel(game.currentLevel);
-                updateHUD();
+        function checkFlag() {
+            const flag = levels[game.currentLevel - 1].flag;
+            if (!flag || boss.active) return;
+            
+            if (player.x + 32 > flag.x && player.x < flag.x + 8) {
+                completeLevel();
             }
         }
 
-        function showVictory() {
-            document.getElementById('levelComplete').style.display = 'none';
-            document.getElementById('gameOverText').textContent = '🎉 YOU WIN! 🎉';
-            document.getElementById('finalScore').textContent = `Final Score: ${game.score}`;
-            document.getElementById('gameOver').style.display = 'block';
+        function completeLevel() {
+            game.score += 1000;
+            game.currentLevel++;
+            updateHUD();
+            
+            if (game.currentLevel > levels.length) {
+                showModal('🏆 QUEST COMPLETE!', `You saved the kingdom!\nFinal Score: ${game.score.toLocaleString()}`, 'Main Menu', 'menu');
+            } else {
+                showModal('🌟 Level Complete!', `Score: ${game.score}`, 'Next Level', 'next');
+            }
+        }
+
+        function nextLevel() {
+            loadLevel(game.currentLevel);
         }
 
         function updateHUD() {
@@ -1084,42 +1092,179 @@
             document.getElementById('lives').textContent = game.lives;
         }
 
-        function restartGame() {
-            game = { score: 0, coins: 0, lives: 3, currentLevel: 1, gameOver: false, cameraX: 0, levelComplete: false };
-            player.powerUp = 'small';
-            player.invincible = false;
-            player.invincibleTimer = 0;
-            player.fireTimer = 0;
-            document.getElementById('gameOver').style.display = 'none';
-            loadLevel(1);
-            updateHUD();
+        function showModal(title, text, btnText, action) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalText').textContent = text;
+            document.getElementById('modalBtn').textContent = btnText;
+            window.modalAction = action;
+            document.getElementById('modal').style.display = 'block';
         }
 
-        function gameLoop() {
-            if (game.gameOver) return;
-            
-            ctx.clearRect(0, 0, 800, 600);
+        function handleModalAction() {
+            document.getElementById('modal').style.display = 'none';
+            if (window.modalAction === 'menu') {
+                showMenu();
+            } else if (window.modalAction === 'next') {
+                nextLevel();
+            }
+        }
+
+        function saveScore() {
+            const scores = JSON.parse(localStorage.getItem(LB_KEY));
+            scores.push({name: currentPlayer, score: game.score});
+            scores.sort((a, b) => b.score - a.score);
+            localStorage.setItem(LB_KEY, JSON.stringify(scores.slice(0, 10)));
+        }
+
+        // ===== DRAWING =====
+        function drawBackground() {
             ctx.fillStyle = '#5c94fc';
             ctx.fillRect(0, 0, 800, 400);
             ctx.fillStyle = '#003300';
             ctx.fillRect(0, 400, 800, 200);
+        }
+
+        function drawPlayer() {
+            const h = player.powerUp === 'big' || player.powerUp === 'fire' ? 48 : 32;
+            ctx.fillStyle = player.powerUp === 'fire' ? '#ffffff' : '#ff0000';
+            ctx.fillRect(player.x - game.cameraX + shake.x, player.y + shake.y, 32, 12);
+            ctx.fillStyle = player.powerUp === 'fire' ? '#ffffff' : '#0000ff';
+            ctx.fillRect(player.x - game.cameraX + shake.x + 6, player.y + shake.y + 12, 20, h - 12);
+            ctx.fillStyle = '#ffcc99';
+            ctx.fillRect(player.x - game.cameraX + shake.x + 8, player.y + shake.y + 24, 16, 10);
+        }
+
+        function drawBoss() {
+            if (!boss.active) return;
+            ctx.fillStyle = '#8B0000';
+            ctx.fillRect(boss.x - game.cameraX + shake.x, boss.y + shake.y, 64, 64);
+        }
+
+        function drawPlatforms() {
+            platforms.forEach(p => {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(p.x - game.cameraX + shake.x, p.y + shake.y, p.w, p.h);
+            });
+        }
+
+        function drawCoins() {
+            coins.forEach(c => {
+                if (!c.collected) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(c.x - game.cameraX + shake.x, c.y + shake.y, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#FFA500';
+                    ctx.beginPath();
+                    ctx.arc(c.x - game.cameraX + shake.x, c.y + shake.y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        function drawPowerUps() {
+            powerUps.forEach(p => {
+                if (!p.collected) {
+                    if (p.type === 'mushroom') {
+                        ctx.fillStyle = '#ff0000';
+                        ctx.beginPath();
+                        ctx.arc(p.x - game.cameraX + shake.x, p.y + shake.y - 8, 12, Math.PI, 0);
+                        ctx.fill();
+                        ctx.fillStyle = '#fff';
+                        ctx.beginPath();
+                        ctx.arc(p.x - game.cameraX + shake.x - 6, p.y + shake.y - 10, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(p.x - game.cameraX + shake.x + 6, p.y + shake.y - 10, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#ffcc99';
+                        ctx.fillRect(p.x - game.cameraX + shake.x - 6, p.y + shake.y - 4, 12, 8);
+                    } else if (p.type === 'fireFlower') {
+                        ctx.fillStyle = '#00ff00';
+                        ctx.fillRect(p.x - game.cameraX + shake.x - 3, p.y + shake.y - 8, 6, 16);
+                        ctx.fillStyle = '#ff6600';
+                        ctx.beginPath();
+                        ctx.arc(p.x - game.cameraX + shake.x, p.y + shake.y - 12, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#ffff00';
+                        ctx.beginPath();
+                        ctx.arc(p.x - game.cameraX + shake.x, p.y + shake.y - 12, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            });
+        }
+
+        function drawEnemies() {
+            enemies.forEach(e => {
+                if (e.active) {
+                    ctx.fillStyle = e.type === 'GOOMBA' ? '#8B0000' : '#008000';
+                    ctx.fillRect(e.x - game.cameraX + shake.x, e.y + shake.y, 32, 32);
+                }
+            });
+        }
+
+        function drawFireballs() {
+            fireballs.forEach(f => {
+                ctx.fillStyle = '#ff6600';
+                ctx.beginPath();
+                ctx.arc(f.x - game.cameraX + shake.x, f.y + shake.y, f.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                ctx.arc(f.x - game.cameraX + shake.x, f.y + shake.y, f.radius/2, 0, Math.PI * 2);
+                ctx.fill();
+            });
             
-            if (!game.levelComplete) {
-                updatePlayer();
-                updateEnemies();
-                updateCoins();
-                updateFireballs();
-                if (boss.active) updateBoss();
-                checkFlag();
-            }
+            bossFireballs.forEach(f => {
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(f.x - game.cameraX + shake.x, f.y + shake.y, f.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function drawFlag() {
+            const flag = levels[game.currentLevel - 1].flag;
+            if (!flag) return;
             
+            ctx.fillStyle = '#228B22';
+            ctx.fillRect(flag.x - game.cameraX + shake.x, flag.y - 100 + shake.y, 8, 100);
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.moveTo(flag.x - game.cameraX + shake.x + 8, flag.y - 100 + shake.y);
+            ctx.lineTo(flag.x - game.cameraX + shake.x + 48, flag.y - 85 + shake.y);
+            ctx.lineTo(flag.x - game.cameraX + shake.x + 8, flag.y - 70 + shake.y);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // ===== GAME LOOP =====
+        function gameLoop() {
+            if (game.levelComplete) return;
+            
+            // Update
+            updatePlayer();
+            updateEnemies();
+            updateCoins();
+            updatePowerUps();
+            updateFireballs();  // ✅ Now fireballs kill enemies
+            updateParticles();
+            updateShake();
+            if (boss.active) updateBoss();
+            checkFlag();
+            
+            // Draw
+            drawBackground();
             drawPlatforms();
             drawCoins();
+            drawPowerUps();
             drawEnemies();
             drawFireballs();
             if (boss.active) drawBoss();
             drawFlag();
             drawPlayer();
+            drawParticles();
             
             requestAnimationFrame(gameLoop);
         }
@@ -1127,3 +1272,32 @@
 </body>
 </html>
 
+
+
+              <script>
+                              // 🔥 HIT ENEMIES WITH FIREBALLS
+for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    if (e.active && 
+        f.x > e.x && 
+        f.x < e.x + 32 && 
+        f.y > e.y && 
+        f.y < e.y + 32) {
+        e.active = false; // ✅ Enemy dies
+        game.score += 200;
+        updateHUD();
+        screenShake(4, 10);
+        createParticles(e.x + 16, e.y + 16, 10, { 
+            color: '#ff5555', 
+            size: 3, 
+            life: 30 
+        });
+        return false; // Remove fireball
+    }
+}
+
+
+              </script>
+                        </body>
+                        </html>
+                    
