@@ -21,6 +21,7 @@
             color: white;
         }
 
+        /* SCREENS */
         .screen {
             position: relative;
             width: 800px;
@@ -243,14 +244,16 @@
     </style>
 </head>
 <body>
+    <!-- MENU -->
     <div id="menuScreen" class="screen">
-        <h1 class="menu-title">SUPER MARIO QUEST</h1>
+        <h1 class="menu-title">GORDON'S QUEST</h1>
         <button class="menu-btn" onclick="showLogin()">▶️ START GAME</button>
         <button class="menu-btn" onclick="showLeaderboard()">🏆 LEADERBOARD</button>
         <button class="menu-btn" onclick="showSettings()">⚙️ SETTINGS</button>
         <div id="credit">Made for smart players who fire with K!</div>
     </div>
 
+    <!-- LOGIN -->
     <div id="loginScreen" class="screen auth-screen">
         <h2 style="font-size:42px; margin-bottom:30px; color:#ff5555;">ENTER YOUR NAME</h2>
         <input type="text" id="playerName" value="" maxlength="12" placeholder="Your Hero Name">
@@ -258,12 +261,14 @@
         <button class="menu-btn" style="background:#555;" onclick="showMenu()">⬅️ MAIN MENU</button>
     </div>
 
+    <!-- LEADERBOARD -->
     <div id="leaderboardScreen" class="screen auth-screen">
         <h2 style="font-size:38px; margin-bottom:30px; color:gold;">HALL OF LEGENDS</h2>
         <div id="leaderboardList"></div>
         <button class="menu-btn" onclick="showMenu()">⬅️ MAIN MENU</button>
     </div>
 
+    <!-- SETTINGS -->
     <div id="settingsPanel">
         <button class="close-btn" onclick="hideSettings()">✕</button>
         <h3 style="font-size:28px; margin-bottom:25px; color:#ffcc00;">🎮 SETTINGS</h3>
@@ -274,6 +279,7 @@
         <button class="menu-btn" onclick="saveSettings()" style="margin-top:25px;">💾 SAVE & APPLY</button>
     </div>
 
+    <!-- GAME -->
     <div id="gameContainer" class="screen">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="hud">
@@ -292,18 +298,20 @@
             <h2 id="modalTitle">Level Complete!</h2>
             <p id="modalText">Score: 0</p>
             <button id="modalBtn" onclick="handleModalAction()">Next</button>
-            <button id="restartBtn" onclick="restartFromModal()" style="display:none;">↻ Restart Level</button>
+            <button id="restartBtn" onclick="restartFromModal()" style="display:none;">↻ Restart Game</button>
         </div>
         <div id="controls">WASD / Arrows: Move | W/↑/Space: Jump | K: Fire</div>
     </div>
 
     <script>
+        // ===== CONFIG & STATE =====
         let currentPlayer = "";
         let fireKey = "K";
-        let LB_KEY = 'mario_final_v18';
+        let LB_KEY = 'mario_final_v24';
         let shake = { x: 0, y: 0, time: 0 };
         let particles = [];
 
+        // Initialize leaderboard
         if (!localStorage.getItem(LB_KEY)) {
             localStorage.setItem(LB_KEY, JSON.stringify([
                 {name: 'MARIO', score: 8000},
@@ -314,6 +322,7 @@
             ]));
         }
 
+        // ===== SCREEN NAVIGATION =====
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
             document.getElementById(id).style.display = 'flex';
@@ -321,6 +330,7 @@
 
         function showMenu() { 
             showScreen('menuScreen');
+            window.gameInitialized = false;
         }
 
         function showLogin() { 
@@ -379,8 +389,10 @@
             }
         }
 
+        // Show menu first
         showScreen('menuScreen');
 
+        // ===== GAME ENGINE =====
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
@@ -429,6 +441,7 @@
             fireCooldown: 0
         };
 
+        // ===== FULL LEVEL DATA =====
         const levels = [
             {
                 platforms: [
@@ -455,7 +468,10 @@
                     {x:550,y:400,w:120,h:20}
                 ],
                 coins: [{x:350,y:430},{x:600,y:380},{x:850,y:530},{x:1100,y:530}],
-                enemies: [{x:650,y:518,type:'GOOMBA'},{x:1050,y:518,type:'KOOPA'}],
+                enemies: [
+                    {x:650,y:518,type:'GOOMBA'},
+                    {x:1050,y:518,type:'KOOPA'}
+                ],
                 powerUps: [{x:850,y:518,type:'fireFlower'}],
                 flag: {x:2000,y:550}
             },
@@ -511,7 +527,11 @@
                     {x:1400,y:550,w:500,h:50}
                 ],
                 coins: [{x:450,y:480},{x:650,y:430},{x:850,y:380},{x:1050,y:430}],
-                enemies: [{x:450,y:468,type:'GOOMBA'},{x:650,y:418,type:'KOOPA'},{x:850,y:368,type:'GOOMBA'}],
+                enemies: [
+                    {x:450,y:468,type:'GOOMBA'},
+                    {x:650,y:418,type:'KOOPA'},
+                    {x:850,y:368,type:'GOOMBA'}
+                ],
                 flag: {x:1800,y:550}
             },
             {
@@ -526,7 +546,12 @@
                     {x:1500,y:550,w:400,h:50}
                 ],
                 coins: [{x:340,y:480},{x:540,y:430},{x:740,y:380},{x:940,y:330}],
-                enemies: [{x:350,y:468,type:'GOOMBA'},{x:550,y:418,type:'KOOPA'},{x:750,y:368,type:'GOOMBA'},{x:950,y:318,type:'KOOPA'}],
+                enemies: [
+                    {x:350,y:468,type:'GOOMBA'},
+                    {x:550,y:418,type:'KOOPA'},
+                    {x:750,y:368,type:'GOOMBA'},
+                    {x:950,y:318,type:'KOOPA'}
+                ],
                 flag: {x:1800,y:550}
             },
             {
@@ -540,8 +565,19 @@
                     {x:1350,y:450,w:90,h:20},
                     {x:1550,y:550,w:350,h:50}
                 ],
-                coins: [{x:395,y:480},{x:595,y:430},{x:795,y:380},{x:995,y:330},{x:1195,y:430}],
-                enemies: [{x:400,y:468,type:'GOOMBA'},{x:600,y:418,type:'KOOPA'},{x:800,y:368,type:'GOOMBA'},{x:1000,y:318,type:'KOOPA'}],
+                coins: [
+                    {x:395,y:480},
+                    {x:595,y:430},
+                    {x:795,y:380},
+                    {x:995,y:330},
+                    {x:1195,y:430}
+                ],
+                enemies: [
+                    {x:400,y:468,type:'GOOMBA'},
+                    {x:600,y:418,type:'KOOPA'},
+                    {x:800,y:368,type:'GOOMBA'},
+                    {x:1000,y:318,type:'KOOPA'}
+                ],
                 flag: {x:1800,y:550}
             },
             {
@@ -554,8 +590,18 @@
                     {x:1200,y:520,w:100,h:20},
                     {x:1400,y:550,w:500,h:50}
                 ],
-                coins: [{x:450,y:500},{x:650,y:470},{x:850,y:440},{x:1050,y:470},{x:1250,y:500}],
-                enemies: [{x:450,y:488,type:'GOOMBA'},{x:650,y:458,type:'KOOPA'},{x:850,y:428,type:'GOOMBA'}],
+                coins: [
+                    {x:450,y:500},
+                    {x:650,y:470},
+                    {x:850,y:440},
+                    {x:1050,y:470},
+                    {x:1250,y:500}
+                ],
+                enemies: [
+                    {x:450,y:488,type:'GOOMBA'},
+                    {x:650,y:458,type:'KOOPA'},
+                    {x:850,y:428,type:'GOOMBA'}
+                ],
                 flag: {x:1800,y:550}
             },
             {
@@ -568,8 +614,18 @@
                     {x:1100,y:530,w:80,h:20},
                     {x:1300,y:550,w:300,h:50}
                 ],
-                coins: [{x:340,y:510},{x:540,y:490},{x:740,y:470},{x:940,y:490}],
-                enemies: [{x:350,y:508,type:'GOOMBA'},{x:550,y:488,type:'KOOPA'},{x:750,y:468,type:'GOOMBA'},{x:950,y:488,type:'KOOPA'}],
+                coins: [
+                    {x:340,y:510},
+                    {x:540,y:490},
+                    {x:740,y:470},
+                    {x:940,y:490}
+                ],
+                enemies: [
+                    {x:350,y:508,type:'GOOMBA'},
+                    {x:550,y:488,type:'KOOPA'},
+                    {x:750,y:468,type:'GOOMBA'},
+                    {x:950,y:488,type:'KOOPA'}
+                ],
                 flag: {x:1500,y:550}
             },
             {
@@ -582,8 +638,17 @@
                     {x:1150,y:540,w:90,h:20},
                     {x:1350,y:550,w:350,h:50}
                 ],
-                coins: [{x:395,y:520},{x:595,y:510},{x:795,y:500},{x:995,y:510}],
-                enemies: [{x:400,y:518,type:'GOOMBA'},{x:600,y:508,type:'KOOPA'},{x:800,y:508,type:'GOOMBA'}],
+                coins: [
+                    {x:395,y:520},
+                    {x:595,y:510},
+                    {x:795,y:500},
+                    {x:995,y:510}
+                ],
+                enemies: [
+                    {x:400,y:518,type:'GOOMBA'},
+                    {x:600,y:508,type:'KOOPA'},
+                    {x:800,y:508,type:'GOOMBA'}
+                ],
                 flag: {x:1600,y:550}
             },
             {
@@ -604,6 +669,7 @@
 
         let platforms = [], coins = [], enemies = [], powerUps = [], fireballs = [], bossFireballs = [];
 
+        // ===== INPUT HANDLING =====
         document.addEventListener('keydown', (e) => {
             keys[e.code] = true;
             if (e.code === 'KeyA') keys['ArrowLeft'] = true;
@@ -638,6 +704,7 @@
             if (e.code === 'KeyD') keys['ArrowRight'] = false;
         });
 
+        // ===== GAME FUNCTIONS =====
         function initGame() {
             resetGame();
             gameLoop();
@@ -747,6 +814,9 @@
         }
 
         function updatePlayer() {
+            // ✅ STOP PLAYER MOVEMENT WHEN LEVEL IS COMPLETE
+            if (game.levelComplete) return;
+            
             player.velX = 0;
             if (keys['ArrowLeft'] || keys['KeyA']) {
                 player.velX = -MOVE_SPEED;
@@ -772,7 +842,9 @@
                 }
             });
             
-            if (player.y > 650) loseLife();
+            if (player.y > 650) {
+                loseLife(); // ✅ FIXED: Fall off death now reduces lives
+            }
             
             game.cameraX = Math.max(0, player.x - 350);
             document.getElementById('playerX').textContent = Math.floor(player.x);
@@ -793,7 +865,7 @@
                 });
 
                 if (platform) {
-                    e.y = platform.y - 32;
+                    e.y = platform.y - 32; // ✅ ENEMIES STAND ON PLATFORMS
                     if (e.x <= platform.x || e.x + 32 >= platform.x + platform.w) {
                         e.direction *= -1;
                     }
@@ -951,13 +1023,13 @@
             screenShake(8, 15);
         }
 
+        // ✅ FIXED: Lives decrease on hit, game ends at 0
         function loseLife() {
             game.lives--;
             updateHUD();
             
             if (game.lives <= 0) {
                 saveScore();
-                showMenu();
                 const finalScore = game.score;
                 showModal(
                     'Game Over!', 
@@ -967,9 +1039,13 @@
                     true // showRestart = true
                 );
             } else {
+                // ✅ Reset player position to start of level
+                player.x = 100;
+                player.y = 400;
+                player.velX = 0;
+                player.velY = 0;
                 player.invincible = true;
                 player.invincibleTimer = 120;
-                loadLevel(game.currentLevel);
             }
         }
 
@@ -1041,6 +1117,7 @@
             const restartBtn = document.getElementById('restartBtn');
             if (showRestart) {
                 restartBtn.style.display = 'inline-block';
+                restartBtn.textContent = '↻ Restart Game';
             } else {
                 restartBtn.style.display = 'none';
             }
@@ -1057,20 +1134,30 @@
             }
         }
 
+        // ✅ FIXED: Restart entire game (not just level)
         function restartFromModal() {
             document.getElementById('modal').style.display = 'none';
             resetGame();
-            gameLoop();
         }
 
         function saveScore() {
             const scores = JSON.parse(localStorage.getItem(LB_KEY));
             const nameToSave = currentPlayer || "Anonymous";
-            scores.push({name: nameToSave, score: game.score});
-            scores.sort((a, b) => b.score - a.score);
-            localStorage.setItem(LB_KEY, JSON.stringify(scores.slice(0, 10)));
+            
+            // Remove any existing entry with the same name
+            const filteredScores = scores.filter(entry => entry.name !== nameToSave);
+            
+            // Add new score
+            filteredScores.push({name: nameToSave, score: game.score});
+            
+            // Sort and keep top 10
+            filteredScores.sort((a, b) => b.score - a.score);
+            const topScores = filteredScores.slice(0, 10);
+            
+            localStorage.setItem(LB_KEY, JSON.stringify(topScores));
         }
 
+        // ===== DRAWING =====
         function drawBackground() {
             ctx.fillStyle = '#5c94fc';
             ctx.fillRect(0, 0, 800, 400);
@@ -1199,6 +1286,7 @@
             ctx.textAlign = 'left';
         }
 
+        // ===== GAME LOOP =====
         function gameLoop() {
             if (game.levelComplete) return;
             
