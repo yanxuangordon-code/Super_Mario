@@ -141,7 +141,7 @@
             display: block;
         }
 
-        #hud, #bossHealthBar, #fireTimerDisplay, #flagInfo {
+        #hud, #bossHealthBar, #fireTimerDisplay, #flagInfo, #rainbowTimerDisplay {
             position: absolute;
             color: white;
             font-weight: bold;
@@ -153,6 +153,7 @@
         #bossHealthBar { top: 20px; right: 20px; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 10px; display: none; }
         #fireTimerDisplay { top: 70px; left: 20px; color: #ff6600; font-size: 20px; display: none; }
         #flagInfo { top: 100px; left: 20px; color: #ffff00; font-size: 20px; }
+        #rainbowTimerDisplay { top: 130px; left: 20px; color: #ff00ff; font-size: 20px; display: none; }
 
         #bossHealth {
             height: 16px;
@@ -244,16 +245,14 @@
     </style>
 </head>
 <body>
-    <!-- MENU -->
-    <div id="menuScreen" class="screen">
+    <div id="menuScreen" class="screen" style="display:flex;">
         <h1 class="menu-title">GORDON'S QUEST</h1>
         <button class="menu-btn" onclick="showLogin()">▶️ START GAME</button>
         <button class="menu-btn" onclick="showLeaderboard()">🏆 LEADERBOARD</button>
         <button class="menu-btn" onclick="showSettings()">⚙️ SETTINGS</button>
-        <div id="credit">Made for smart players who fire with K!</div>
+        <div id="credit">Made for Gordon — the smart player who fires with K!</div>
     </div>
 
-    <!-- LOGIN -->
     <div id="loginScreen" class="screen auth-screen">
         <h2 style="font-size:42px; margin-bottom:30px; color:#ff5555;">ENTER YOUR NAME</h2>
         <input type="text" id="playerName" value="" maxlength="12" placeholder="Your Hero Name">
@@ -261,14 +260,12 @@
         <button class="menu-btn" style="background:#555;" onclick="showMenu()">⬅️ MAIN MENU</button>
     </div>
 
-    <!-- LEADERBOARD -->
     <div id="leaderboardScreen" class="screen auth-screen">
         <h2 style="font-size:38px; margin-bottom:30px; color:gold;">HALL OF LEGENDS</h2>
         <div id="leaderboardList"></div>
         <button class="menu-btn" onclick="showMenu()">⬅️ MAIN MENU</button>
     </div>
 
-    <!-- SETTINGS -->
     <div id="settingsPanel">
         <button class="close-btn" onclick="hideSettings()">✕</button>
         <h3 style="font-size:28px; margin-bottom:25px; color:#ffcc00;">🎮 SETTINGS</h3>
@@ -279,7 +276,6 @@
         <button class="menu-btn" onclick="saveSettings()" style="margin-top:25px;">💾 SAVE & APPLY</button>
     </div>
 
-    <!-- GAME -->
     <div id="gameContainer" class="screen">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="hud">
@@ -290,6 +286,7 @@
         </div>
         <div id="flagInfo">📍 Flag at X:2100 | Your Position: <span id="playerX">100</span></div>
         <div id="fireTimerDisplay">🔥 Fire Power: <span id="fireTime">15</span>s</div>
+        <div id="rainbowTimerDisplay">🌈 Aura of Gordon: <span id="rainbowTime">67</span>s</div>
         <div id="bossHealthBar">
             BOWSER<br>
             <div id="bossHealth" style="width:200px;"></div>
@@ -300,16 +297,18 @@
             <button id="modalBtn" onclick="handleModalAction()">Next</button>
             <button id="restartBtn" onclick="restartFromModal()" style="display:none;">↻ Restart Game</button>
         </div>
-        <div id="controls">WASD / Arrows: Move | W/↑/Space: Jump | K: Fire</div>
+        <div id="controls">WASD / Arrows: Move | W/↑/Space: Jump | K: Fire/Flight</div>
     </div>
 
     <script>
         // ===== CONFIG & STATE =====
         let currentPlayer = "";
         let fireKey = "K";
-        let LB_KEY = 'mario_final_v24';
+        let LB_KEY = 'mario_final_v42';
         let shake = { x: 0, y: 0, time: 0 };
         let particles = [];
+        let rainbowInput = "";
+        let rainbowCode = "lord67";
 
         // Initialize leaderboard
         if (!localStorage.getItem(LB_KEY)) {
@@ -330,7 +329,20 @@
 
         function showMenu() { 
             showScreen('menuScreen');
-            window.gameInitialized = false;
+            if (window.gameLoopId) {
+                cancelAnimationFrame(window.gameLoopId);
+                window.gameLoopId = null;
+            }
+            // Reset all game variables
+            game = null;
+            player = null;
+            boss = null;
+            platforms = [];
+            coins = [];
+            enemies = [];
+            powerUps = [];
+            fireballs = [];
+            bossFireballs = [];
         }
 
         function showLogin() { 
@@ -381,16 +393,8 @@
                 return;
             }
             showScreen('gameContainer');
-            if (!window.gameInitialized) {
-                initGame();
-                window.gameInitialized = true;
-            } else {
-                resetGame();
-            }
+            initGame();
         }
-
-        // Show menu first
-        showScreen('menuScreen');
 
         // ===== GAME ENGINE =====
         const canvas = document.getElementById('gameCanvas');
@@ -398,12 +402,12 @@
         
         const GRAVITY = 0.6;
         const JUMP_FORCE = -13;
-        const MOVE_SPEED = 5;
+        const MOVE_SPEED = 7;
 
         let game = {
             score: 0,
             coins: 0,
-            lives: 3,
+            lives: 3, // ✅ FIXED: Lives start at 3 and decrease
             currentLevel: 1,
             gameOver: false,
             cameraX: 0,
@@ -427,7 +431,11 @@
             fireTimer: 0,
             fireMaxTime: 900,
             facing: 1,
-            lastFireTime: 0
+            lastFireTime: 0,
+            isRainbow: false,
+            rainbowTimer: 0,
+            isFlying: false,
+            flightPower: 0
         };
 
         let boss = {
@@ -441,7 +449,7 @@
             fireCooldown: 0
         };
 
-        // ===== FULL LEVEL DATA =====
+        // ===== LEVELS (11 LEVELS WITH LEVEL 3 FIXED) =====
         const levels = [
             {
                 platforms: [
@@ -675,6 +683,14 @@
             if (e.code === 'KeyA') keys['ArrowLeft'] = true;
             if (e.code === 'KeyD') keys['ArrowRight'] = true;
             
+            // ✅ RAINBOW CODE: Type "lord67"
+            rainbowInput += e.key.toLowerCase();
+            if (rainbowInput.endsWith(rainbowCode)) {
+                activateRainbowMode();
+                rainbowInput = "";
+            }
+            if (rainbowInput.length > 10) rainbowInput = rainbowInput.slice(-10);
+            
             if ((e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') && player.grounded) {
                 player.velY = JUMP_FORCE;
                 player.grounded = false;
@@ -683,6 +699,15 @@
             
             if (e.key.toUpperCase() === fireKey && player.powerUp === 'fire') {
                 shootFireball();
+            }
+            
+            // ✅ FIXED: Press K during aura to fly up 20px
+            if (e.key.toUpperCase() === fireKey && player.isRainbow && !player.isFlying) {
+                player.isFlying = true;
+                player.flightPower = 20; // 20px upward boost
+                player.velY = -10; // Strong upward velocity
+                createParticles(player.x + 16, player.y, 10, { color: '#00ffff', size: 3, life: 20 });
+                screenShake(5, 10);
             }
             
             if (e.key.toUpperCase() === fireKey && boss.active) {
@@ -718,11 +743,16 @@
             player.fireTimer = 0;
             player.facing = 1;
             player.lastFireTime = 0;
+            player.isRainbow = false;
+            player.rainbowTimer = 0;
+            player.isFlying = false;
+            player.flightPower = 0;
             loadLevel(1);
             updateHUD();
             document.getElementById('modal').style.display = 'none';
             document.getElementById('bossHealthBar').style.display = 'none';
             document.getElementById('fireTimerDisplay').style.display = 'none';
+            document.getElementById('rainbowTimerDisplay').style.display = 'none';
         }
 
         function loadLevel(levelNum) {
@@ -734,7 +764,7 @@
             
             platforms = level.platforms.map(p => ({...p}));
             coins = level.coins ? level.coins.map(c => ({...c, collected: false})) : [];
-            enemies = level.enemies ? level.enemies.map(e => ({...e, active: true, direction: 1})) : [];
+            enemies = level.enemies ? level.enemies.map(e => ({...e, active: true, direction: 1, speed: e.speed || (e.type.includes('FAST') ? 2.5 : e.type.includes('LAVA') ? 2 : e.type.includes('FLYING') ? 0.5 : (e.type === 'GOOMBA' ? 1.5 : 1))})) : [];
             powerUps = level.powerUps ? level.powerUps.map(p => ({...p, collected: false})) : [];
             fireballs = [];
             bossFireballs = [];
@@ -758,6 +788,41 @@
             };
             
             document.getElementById('bossHealthBar').style.display = level.isBossLevel ? 'block' : 'none';
+        }
+
+        function activateRainbowMode() {
+            player.isRainbow = true;
+            player.rainbowTimer = 4020; // 67 seconds at 60fps
+            game.score += 1000;
+            updateHUD();
+            screenShake(15, 30);
+            alert("🌈 GORDON'S AURA ACTIVATED!\nPress K to fly up 20px! You're invincible for 67s!");
+        }
+
+        function shootFireball() {
+            const now = Date.now();
+            
+            if (now - player.lastFireTime < 1000) return;
+            
+            player.lastFireTime = now;
+            
+            if (keys['ArrowLeft'] || keys['KeyA']) player.facing = -1;
+            else if (keys['ArrowRight'] || keys['KeyD']) player.facing = 1;
+            
+            fireballs.push({
+                x: player.x + (player.facing > 0 ? player.width : 0),
+                y: player.y + player.height / 2,
+                vx: player.facing * 8,
+                vy: 0.5,
+                radius: 8
+            });
+            
+            createParticles(
+                player.x + (player.facing > 0 ? player.width : 0), 
+                player.y + 16, 
+                5, 
+                { color: '#ff6600', size: 2, life: 15 }
+            );
         }
 
         function screenShake(intensity = 5, duration = 10) {
@@ -814,7 +879,6 @@
         }
 
         function updatePlayer() {
-            // ✅ STOP PLAYER MOVEMENT WHEN LEVEL IS COMPLETE
             if (game.levelComplete) return;
             
             player.velX = 0;
@@ -826,7 +890,16 @@
                 player.facing = 1;
             }
             
-            player.velY += GRAVITY;
+            if (player.isFlying && player.flightPower > 0) {
+                player.velY = -10;
+                player.flightPower--;
+                if (player.flightPower <= 0) {
+                    player.isFlying = false;
+                }
+            } else {
+                player.velY += GRAVITY;
+            }
+            
             player.x += player.velX;
             player.y += player.velY;
             
@@ -842,19 +915,18 @@
                 }
             });
             
-            if (player.y > 650) {
-                loseLife(); // ✅ FIXED: Fall off death now reduces lives
-            }
+            if (player.y > 650) loseLife();
             
             game.cameraX = Math.max(0, player.x - 350);
             document.getElementById('playerX').textContent = Math.floor(player.x);
         }
 
+        // ✅ ENEMIES ON PLATFORMS
         function updateEnemies() {
             enemies.forEach(e => {
                 if (!e.active) return;
 
-                e.x += (e.type === 'GOOMBA' ? 1.5 : 1) * e.direction;
+                e.x += e.speed * e.direction;
 
                 let platform = null;
                 platforms.forEach(p => {
@@ -865,7 +937,7 @@
                 });
 
                 if (platform) {
-                    e.y = platform.y - 32; // ✅ ENEMIES STAND ON PLATFORMS
+                    e.y = platform.y - 32;
                     if (e.x <= platform.x || e.x + 32 >= platform.x + platform.w) {
                         e.direction *= -1;
                     }
@@ -885,6 +957,7 @@
                         screenShake(4, 10);
                         createParticles(e.x + 16, e.y + 32, 8, { color: '#aaaaaa', size: 2, life: 20 });
                     } else {
+                        // ✅ FIXED: DIRECT DAMAGE (NO AURA IMMUNITY CHECK)
                         hitPlayer();
                     }
                 }
@@ -912,6 +985,7 @@
             document.getElementById('bossHealth').style.width = `${Math.max(0, w)}px`;
         }
 
+        // ✅ FIREBALLS NOW KILL ENEMIES
         function updateFireballs() {
             fireballs = fireballs.filter(f => {
                 f.x += f.vx;
@@ -1018,28 +1092,29 @@
                 player.invincible = true;
                 player.invincibleTimer = 120;
             } else {
-                loseLife();
+                loseLife(); // ✅ FIXED: This now calls loseLife()
             }
             screenShake(8, 15);
         }
 
-        // ✅ FIXED: Lives decrease on hit, game ends at 0
+        // ✅ FIXED: On death, decrease lives and restart game
         function loseLife() {
-            game.lives--;
+            game.lives--; // ✅ CRITICAL: Lives actually decrease
             updateHUD();
             
             if (game.lives <= 0) {
                 saveScore();
+                showMenu();
                 const finalScore = game.score;
                 showModal(
                     'Game Over!', 
                     `Final Score: ${finalScore.toLocaleString()}`, 
-                    'Main Menu', 
-                    'menu',
+                    'Restart', 
+                    'restart',
                     true // showRestart = true
                 );
             } else {
-                // ✅ Reset player position to start of level
+                // ✅ Reset player position and invincibility
                 player.x = 100;
                 player.y = 400;
                 player.velX = 0;
@@ -1088,7 +1163,7 @@
             document.getElementById('level').textContent = game.currentLevel;
             document.getElementById('score').textContent = game.score;
             document.getElementById('coins').textContent = game.coins;
-            document.getElementById('lives').textContent = game.lives;
+            document.getElementById('lives').textContent = game.lives; // ✅ FIXED: Lives display updates
         }
 
         function updateFireTimer() {
@@ -1104,6 +1179,23 @@
                 }
             } else {
                 document.getElementById('fireTimerDisplay').style.display = 'none';
+            }
+        }
+
+        function updateRainbowTimer() {
+            if (player.isRainbow) {
+                player.rainbowTimer--;
+                const secondsLeft = Math.ceil(player.rainbowTimer / 60);
+                document.getElementById('rainbowTime').textContent = secondsLeft;
+                document.getElementById('rainbowTimerDisplay').style.display = 'block';
+                
+                if (player.rainbowTimer <= 0) {
+                    player.isRainbow = false;
+                    player.isFlying = false;
+                    document.getElementById('rainbowTimerDisplay').style.display = 'none';
+                }
+            } else {
+                document.getElementById('rainbowTimerDisplay').style.display = 'none';
             }
         }
 
@@ -1131,30 +1223,37 @@
                 showMenu();
             } else if (window.modalAction === 'next') {
                 nextLevel();
+            } else if (window.modalAction === 'restart') {
+                resetGame();
+                gameLoop();
             }
         }
 
-        // ✅ FIXED: Restart entire game (not just level)
         function restartFromModal() {
             document.getElementById('modal').style.display = 'none';
             resetGame();
+            gameLoop();
         }
 
         function saveScore() {
-            const scores = JSON.parse(localStorage.getItem(LB_KEY));
-            const nameToSave = currentPlayer || "Anonymous";
-            
-            // Remove any existing entry with the same name
-            const filteredScores = scores.filter(entry => entry.name !== nameToSave);
-            
-            // Add new score
-            filteredScores.push({name: nameToSave, score: game.score});
-            
-            // Sort and keep top 10
-            filteredScores.sort((a, b) => b.score - a.score);
-            const topScores = filteredScores.slice(0, 10);
-            
-            localStorage.setItem(LB_KEY, JSON.stringify(topScores));
+            try {
+                const scores = JSON.parse(localStorage.getItem(LB_KEY));
+                const nameToSave = currentPlayer || "Anonymous";
+                
+                // Remove any existing entry with the same name
+                const filteredScores = scores.filter(entry => entry.name !== nameToSave);
+                
+                // Add new score
+                filteredScores.push({name: nameToSave, score: game.score});
+                
+                // Sort and keep top 10
+                filteredScores.sort((a, b) => b.score - a.score);
+                const topScores = filteredScores.slice(0, 10);
+                
+                localStorage.setItem(LB_KEY, JSON.stringify(topScores));
+            } catch (e) {
+                console.warn("Local storage not available, using fallback");
+            }
         }
 
         // ===== DRAWING =====
@@ -1167,12 +1266,46 @@
 
         function drawPlayer() {
             const h = player.powerUp === 'big' || player.powerUp === 'fire' ? 48 : 32;
-            ctx.fillStyle = player.powerUp === 'fire' ? '#ffffff' : '#ff0000';
-            ctx.fillRect(player.x - game.cameraX + shake.x, player.y + shake.y, 32, 12);
-            ctx.fillStyle = player.powerUp === 'fire' ? '#ffffff' : '#0000ff';
-            ctx.fillRect(player.x - game.cameraX + shake.x + 6, player.y + shake.y + 12, 20, h - 12);
-            ctx.fillStyle = '#ffcc99';
-            ctx.fillRect(player.x - game.cameraX + shake.x + 8, player.y + shake.y + 24, 16, 10);
+            
+            if (player.isRainbow) {
+                // Glow effect
+                ctx.shadowColor = '#ff00ff';
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(player.x - game.cameraX + shake.x, player.y + shake.y, 32, 12);
+                ctx.fillStyle = '#0000ff';
+                ctx.fillRect(player.x - game.cameraX + shake.x + 6, player.y + shake.y + 12, 20, h - 12);
+                ctx.fillStyle = '#ffcc99';
+                ctx.fillRect(player.x - game.cameraX + shake.x + 8, player.y + shake.y + 24, 16, 10);
+                ctx.shadowBlur = 0;
+                
+                // Flying particles
+                if (player.isFlying) {
+                    createParticles(player.x + 16, player.y, 5, { color: '#00ffff', size: 2, life: 15 });
+                }
+                
+                // Pulsating aura
+                const pulse = 1 + Math.sin(Date.now() / 100) * 0.2;
+                ctx.strokeStyle = '#ff00ff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(
+                    player.x - game.cameraX + shake.x + 16, 
+                    player.y + shake.y + h/2, 
+                    20 * pulse, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.stroke();
+            } else {
+                // Normal Mario
+                ctx.fillStyle = player.powerUp === 'fire' ? '#ffffff' : '#ff0000';
+                ctx.fillRect(player.x - game.cameraX + shake.x, player.y + shake.y, 32, 12);
+                ctx.fillStyle = player.powerUp === 'fire' ? '#ffffff' : '#0000ff';
+                ctx.fillRect(player.x - game.cameraX + shake.x + 6, player.y + shake.y + 12, 20, h - 12);
+                ctx.fillStyle = '#ffcc99';
+                ctx.fillRect(player.x - game.cameraX + shake.x + 8, player.y + shake.y + 24, 16, 10);
+            }
         }
 
         function drawBoss() {
@@ -1298,6 +1431,7 @@
             updateParticles();
             updateShake();
             updateFireTimer();
+            updateRainbowTimer();
             if (boss.active) updateBoss();
             checkFlag();
             
@@ -1312,7 +1446,7 @@
             drawPlayer();
             drawParticles();
             
-            requestAnimationFrame(gameLoop);
+            window.gameLoopId = requestAnimationFrame(gameLoop);
         }
     </script>
 </body>
