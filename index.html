@@ -4,6 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gordon's Quest</title>
+
+<!-- ===== GORDON'S GATE STYLE ===== -->
+<style>
+  #gg-gate {
+    position: fixed; inset: 0;
+    background: #000;
+    z-index: 999999;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+  }
+  #gg-gate::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,224,255,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,224,255,0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gg-grid 4s linear infinite;
+  }
+  @keyframes gg-grid { 0% { background-position: 0 0; } 100% { background-position: 40px 40px; } }
+  #gg-gate::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+    pointer-events: none; z-index: 1;
+  }
+  .gg-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; max-width: 500px; padding: 20px; }
+  .gg-skull { font-size: 2.8em; animation: gg-pulse 2s ease-in-out infinite; filter: drop-shadow(0 0 15px #00e0ff); }
+  @keyframes gg-pulse { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 10px #00e0ff); } 50% { transform: scale(1.08); filter: drop-shadow(0 0 25px #00ffff); } }
+  .gg-title { font-size: 1.8em; color: #00e0ff; letter-spacing: 7px; text-align: center; text-shadow: 0 0 20px #00e0ff, 0 0 40px #00a0ff; animation: gg-flicker 4s infinite alternate; }
+  @keyframes gg-flicker { 0%,90%,100% { opacity: 1; } 92% { opacity: 0.4; } 97% { opacity: 0.3; } }
+  .gg-subtitle { color: rgba(0,224,255,0.45); font-size: 0.7em; letter-spacing: 4px; text-align: center; }
+  .gg-box { width: 100%; background: rgba(0,20,40,0.92); border: 1px solid rgba(0,224,255,0.3); border-radius: 8px; padding: 22px; box-shadow: 0 0 30px rgba(0,224,255,0.12), inset 0 0 20px rgba(0,0,0,0.5); }
+  .gg-line { color: rgba(0,224,255,0.55); font-size: 0.72em; margin-bottom: 5px; letter-spacing: 2px; }
+  .gg-line.bright { color: #00e0ff; }
+  .gg-row { display: flex; align-items: center; gap: 10px; margin-top: 13px; border-top: 1px solid rgba(0,224,255,0.15); padding-top: 13px; }
+  .gg-prompt { color: #00e0ff; font-size: 0.95em; white-space: nowrap; text-shadow: 0 0 8px #00e0ff; }
+  #gg-input { background: transparent; border: none; outline: none; color: #00ffff; font-family: 'Courier New', monospace; font-size: 0.95em; flex: 1; letter-spacing: 4px; text-shadow: 0 0 8px #00ffff; caret-color: #00e0ff; }
+  #gg-input::placeholder { color: rgba(0,224,255,0.2); letter-spacing: 2px; font-size: 0.85em; }
+  #gg-btn { background: transparent; border: 1px solid rgba(0,224,255,0.5); color: #00e0ff; font-family: 'Courier New', monospace; font-size: 0.72em; letter-spacing: 2px; padding: 6px 13px; border-radius: 3px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  #gg-btn:hover { background: rgba(0,224,255,0.15); box-shadow: 0 0 12px rgba(0,224,255,0.4); }
+  #gg-denied { color: #ff2244; font-size: 0.82em; letter-spacing: 4px; text-align: center; text-shadow: 0 0 10px #ff2244; height: 20px; opacity: 0; transition: opacity 0.2s; }
+  #gg-denied.show { opacity: 1; }
+  #gg-granted { color: #00ff88; font-size: 1em; letter-spacing: 5px; text-align: center; text-shadow: 0 0 20px #00ff88; opacity: 0; transition: opacity 0.3s; height: 28px; }
+  #gg-granted.show { opacity: 1; }
+  .gg-hint { color: rgba(0,224,255,0.22); font-size: 0.62em; letter-spacing: 3px; text-align: center; }
+  .gg-shake { animation: gg-shk 0.4s cubic-bezier(.36,.07,.19,.97) both !important; }
+  @keyframes gg-shk { 10%,90% { transform: translateX(-4px); } 20%,80% { transform: translateX(6px); } 30%,50%,70% { transform: translateX(-6px); } 40%,60% { transform: translateX(6px); } }
+  .gg-glitch { animation: gg-gl 0.4s steps(1) both !important; }
+  @keyframes gg-gl { 0% { filter: none; } 20% { filter: hue-rotate(90deg) brightness(2); clip-path: inset(10% 0 80% 0); } 40% { filter: hue-rotate(180deg) brightness(0.5); clip-path: inset(60% 0 10% 0); } 60% { filter: hue-rotate(270deg) brightness(2); clip-path: inset(30% 0 50% 0); } 80% { filter: hue-rotate(360deg); clip-path: none; } 100% { filter: none; clip-path: none; } }
+  .gg-unlock { animation: gg-ul 1s ease forwards !important; }
+  @keyframes gg-ul { 0% { opacity: 1; filter: none; } 30% { filter: brightness(3) saturate(2); } 60% { filter: brightness(5) hue-rotate(90deg); transform: scale(1.02); } 100% { opacity: 0; transform: scale(1.05); filter: brightness(10); } }
+</style>
+<!-- ===== END GORDON'S GATE STYLE ===== -->
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -12,7 +69,6 @@
         body::before { content:''; position:fixed; inset:0; background-image:radial-gradient(1px 1px at 20% 30%,white 0%,transparent 100%),radial-gradient(1px 1px at 70% 10%,white 0%,transparent 100%),radial-gradient(1px 1px at 45% 80%,rgba(255,255,255,0.6) 0%,transparent 100%),radial-gradient(1px 1px at 90% 50%,white 0%,transparent 100%),radial-gradient(1px 1px at 10% 60%,rgba(255,255,255,0.4) 0%,transparent 100%),radial-gradient(1px 1px at 55% 20%,white 0%,transparent 100%),radial-gradient(1px 1px at 35% 70%,rgba(255,255,255,0.7) 0%,transparent 100%),radial-gradient(1px 1px at 80% 85%,white 0%,transparent 100%); pointer-events:none; z-index:0; }
         .screen { position:relative; width:800px; height:600px; background:#0a0a1e; border:3px solid var(--gold); border-radius:4px; overflow:hidden; display:none; box-shadow:0 0 0 1px #000,0 0 40px rgba(255,215,0,0.3),0 0 80px rgba(255,215,0,0.1),inset 0 0 60px rgba(0,0,0,0.5); z-index:1; }
         .screen::after { content:''; position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px); pointer-events:none; z-index:100; }
-        /* MENU */
         #menuScreen { display:flex; flex-direction:column; justify-content:center; align-items:center; }
         .menu-bg { position:absolute; inset:0; background:linear-gradient(to bottom,#0d0d2b 0%,#001a0d 60%,#001500 100%); }
         .menu-stars { position:absolute; inset:0; overflow:hidden; }
@@ -30,14 +86,12 @@
         .menu-btn:hover { transform:translateX(4px); border-color:white; color:var(--gold); box-shadow:0 0 20px rgba(255,215,0,0.3); }
         .menu-btn:active { transform:translateX(2px) translateY(2px); }
         .menu-credit { position:absolute; bottom:14px; color:rgba(255,255,255,0.22); font-size:8px; z-index:2; letter-spacing:1px; }
-        /* SETTINGS */
         #settingsPanel { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(3,7,30,0.97); color:var(--gold); padding:35px; border-radius:2px; width:380px; display:none; z-index:50; border:2px solid var(--gold); box-shadow:0 0 40px rgba(255,215,0,0.2); }
         .settings-title { font-size:16px; margin-bottom:28px; text-align:center; }
         .settings-row { display:flex; justify-content:space-between; align-items:center; margin:18px 0; font-size:11px; color:rgba(255,255,255,0.7); }
         .key-input { padding:10px; width:60px; text-align:center; background:rgba(255,255,255,0.05); color:white; border:2px solid var(--gold); border-radius:2px; font-size:20px; font-family:'VT323',monospace; outline:none; }
         .close-x { position:absolute; top:12px; right:14px; background:none; color:var(--gold); border:1px solid var(--gold); width:28px; height:28px; border-radius:2px; font-size:13px; cursor:pointer; font-family:'Press Start 2P',monospace; padding:0; margin:0; }
         .close-x:hover { background:rgba(255,215,0,0.1); }
-        /* HUD */
         #hud { position:absolute; top:0; left:0; right:0; height:50px; background:linear-gradient(to bottom,rgba(0,0,0,0.82),transparent); display:flex; align-items:center; padding:0 20px; gap:28px; z-index:20; font-family:'Press Start 2P',monospace; }
         .hud-item { display:flex; flex-direction:column; align-items:center; }
         .hud-label { font-size:7px; color:rgba(255,255,255,0.45); letter-spacing:1px; margin-bottom:2px; }
@@ -52,7 +106,6 @@
         #powerupBar { position:absolute; top:55px; left:20px; z-index:20; font-size:9px; font-family:'Press Start 2P',monospace; display:none; line-height:1.8; }
         .fire-bar { color:#ff6600; } .rainbow-bar { color:#ff00ff; }
         #flagInfo { position:absolute; bottom:50px; right:16px; color:rgba(255,255,255,0.38); font-size:8px; font-family:'Press Start 2P',monospace; z-index:20; }
-        /* MODAL */
         #modal { position:absolute; inset:0; background:rgba(0,0,0,0.88); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:80; backdrop-filter:blur(4px); }
         .modal-box { background:linear-gradient(135deg,#0a0a2a,#12123a); border:2px solid var(--gold); border-radius:4px; padding:44px 54px; text-align:center; box-shadow:0 0 60px rgba(255,215,0,0.2); font-family:'Press Start 2P',monospace; }
         #modalTitle { font-size:26px; color:var(--gold); text-shadow:3px 3px 0 #8B6914; margin-bottom:16px; }
@@ -67,6 +120,29 @@
     </style>
 </head>
 <body>
+
+<!-- ===== GORDON'S GATE ===== -->
+<div id="gg-gate">
+  <div class="gg-content">
+    <div class="gg-skull">💀</div>
+    <div class="gg-title">ACCESS RESTRICTED</div>
+    <div class="gg-subtitle">[ GORDON'S MAINFRAME v2.0 ]</div>
+    <div class="gg-box" id="gg-box">
+      <div class="gg-line">SYSTEM: INITIALISING SECURITY PROTOCOL...</div>
+      <div class="gg-line bright">STATUS: AUTHENTICATION REQUIRED</div>
+      <div class="gg-line">CLEARANCE LEVEL: CLASSIFIED</div>
+      <div class="gg-row">
+        <span class="gg-prompt">ROOT@GORDON:~$</span>
+        <input type="password" id="gg-input" autocomplete="off" spellcheck="false" placeholder="ENTER ACCESS CODE" maxlength="20" />
+        <button id="gg-btn">ENTER ↵</button>
+      </div>
+    </div>
+    <div id="gg-denied">⛔ ACCESS DENIED — INVALID CODE</div>
+    <div id="gg-granted">✅ ACCESS GRANTED — WELCOME BACK</div>
+    <div class="gg-hint">hint: you know the code</div>
+  </div>
+</div>
+<!-- ===== END GORDON'S GATE ===== -->
 
 <!-- MENU -->
 <div id="menuScreen" class="screen" style="display:flex;">
@@ -204,167 +280,126 @@ document.addEventListener('keyup', e => { keys[e.code] = false; });
 //  LEVELS — 20 normal + 1 boss (21 total)
 // ============================================================
 const levels = [
-    // 1 — Tutorial, easy gaps
     { bg:'day',
       platforms:[{x:0,y:550,w:700,h:50},{x:800,y:550,w:500,h:50},{x:380,y:460,w:140,h:20},{x:680,y:410,w:140,h:20},{x:1050,y:360,w:140,h:20}],
       coins:[{x:440,y:437},{x:740,y:387},{x:1110,y:337},{x:250,y:527},{x:560,y:527}],
       enemies:[{x:900,y:518,type:'GOOMBA'},{x:1250,y:518,type:'GOOMBA'}],
       powerUps:[{x:700,y:384,type:'mushroom'}],
       flag:{x:1640,y:550} },
-
-    // 2 — Gaps + first Koopa
     { bg:'day',
       platforms:[{x:0,y:550,w:360,h:50},{x:460,y:550,w:240,h:50},{x:810,y:550,w:240,h:50},{x:1160,y:550,w:290,h:50},{x:1560,y:550,w:340,h:50},{x:280,y:450,w:130,h:20},{x:580,y:400,w:130,h:20},{x:920,y:470,w:130,h:20}],
       coins:[{x:330,y:527},{x:510,y:527},{x:850,y:527},{x:310,y:427},{x:630,y:377}],
       enemies:[{x:520,y:518,type:'GOOMBA'},{x:1000,y:518,type:'KOOPA'},{x:1300,y:518,type:'GOOMBA'}],
       powerUps:[{x:940,y:444,type:'mushroom'}],
       flag:{x:1820,y:550} },
-
-    // 3 — Staircase + fire flower
     { bg:'day',
       platforms:[{x:0,y:550,w:280,h:50},{x:380,y:520,w:150,h:20},{x:620,y:480,w:150,h:20},{x:860,y:440,w:150,h:20},{x:1100,y:480,w:150,h:20},{x:1340,y:520,w:150,h:20},{x:1580,y:550,w:380,h:50}],
       coins:[{x:440,y:496},{x:680,y:456},{x:920,y:416},{x:1160,y:456},{x:1400,y:496}],
       enemies:[{x:420,y:488,type:'GOOMBA'},{x:890,y:408,type:'KOOPA'},{x:1360,y:488,type:'GOOMBA'}],
       powerUps:[{x:700,y:453,type:'fireFlower'}],
       flag:{x:1880,y:550} },
-
-    // 4 — Sunset ascent
     { bg:'sunset',
       platforms:[{x:0,y:550,w:220,h:50},{x:290,y:510,w:130,h:20},{x:490,y:470,w:130,h:20},{x:690,y:430,w:130,h:20},{x:890,y:390,w:130,h:20},{x:1090,y:350,w:130,h:20},{x:1290,y:390,w:130,h:20},{x:1490,y:430,w:130,h:20},{x:1700,y:550,w:350,h:50}],
       coins:[{x:340,y:487},{x:540,y:447},{x:740,y:407},{x:940,y:367},{x:1140,y:327},{x:1340,y:367}],
       enemies:[{x:340,y:478,type:'GOOMBA'},{x:710,y:398,type:'KOOPA'},{x:950,y:358,type:'GOOMBA'},{x:1350,y:358,type:'KOOPA'}],
       powerUps:[{x:1110,y:323,type:'mushroom'}],
       flag:{x:1960,y:550} },
-
-    // 5 — Sunset wide platforms
     { bg:'sunset',
       platforms:[{x:0,y:550,w:240,h:50},{x:330,y:500,w:150,h:20},{x:570,y:455,w:150,h:20},{x:810,y:410,w:150,h:20},{x:1060,y:455,w:150,h:20},{x:1310,y:500,w:150,h:20},{x:1550,y:550,w:380,h:50}],
       coins:[{x:390,y:477},{x:630,y:432},{x:870,y:387},{x:1115,y:432},{x:1365,y:477}],
       enemies:[{x:50,y:518,type:'GOOMBA'},{x:160,y:518,type:'KOOPA'},{x:1620,y:518,type:'GOOMBA'},{x:1760,y:518,type:'KOOPA'}],
       powerUps:[{x:640,y:428,type:'fireFlower'}],
       flag:{x:1850,y:550} },
-
-    // 6 — Night dense gauntlet
     { bg:'night',
       platforms:[{x:0,y:550,w:500,h:50},{x:600,y:550,w:500,h:50},{x:1200,y:550,w:500,h:50},{x:250,y:450,w:160,h:20},{x:700,y:420,w:160,h:20},{x:1100,y:390,w:160,h:20},{x:1450,y:450,w:160,h:20}],
       coins:[{x:300,y:427},{x:760,y:397},{x:1160,y:367},{x:1510,y:427},{x:100,y:527},{x:900,y:527}],
       enemies:[{x:150,y:518,type:'GOOMBA'},{x:360,y:518,type:'KOOPA'},{x:700,y:518,type:'GOOMBA'},{x:900,y:518,type:'GOOMBA'},{x:1260,y:518,type:'KOOPA'},{x:1480,y:518,type:'GOOMBA'}],
       powerUps:[{x:740,y:393,type:'mushroom'},{x:1140,y:363,type:'fireFlower'}],
       flag:{x:1620,y:550} },
-
-    // 7 — Night long horizontal
     { bg:'night',
       platforms:[{x:0,y:550,w:420,h:50},{x:520,y:550,w:300,h:50},{x:920,y:550,w:300,h:50},{x:1320,y:550,w:300,h:50},{x:1720,y:550,w:380,h:50},{x:290,y:460,w:150,h:20},{x:690,y:430,w:150,h:20},{x:1100,y:400,w:150,h:20},{x:1520,y:430,w:150,h:20}],
       coins:[{x:340,y:437},{x:750,y:407},{x:1160,y:377},{x:1570,y:407},{x:560,y:527},{x:1000,y:527},{x:1400,y:527}],
       enemies:[{x:200,y:518,type:'GOOMBA'},{x:600,y:518,type:'KOOPA'},{x:1000,y:518,type:'GOOMBA'},{x:1160,y:368,type:'KOOPA'},{x:1400,y:518,type:'GOOMBA'},{x:1810,y:518,type:'KOOPA'}],
       powerUps:[{x:760,y:403,type:'fireFlower'}],
       flag:{x:2020,y:550} },
-
-    // 8 — Cave descending zigzag
     { bg:'cave',
       platforms:[{x:0,y:200,w:260,h:20},{x:340,y:260,w:210,h:20},{x:630,y:320,w:210,h:20},{x:920,y:380,w:210,h:20},{x:1210,y:440,w:210,h:20},{x:1500,y:500,w:210,h:20},{x:1760,y:550,w:400,h:50}],
       coins:[{x:80,y:177},{x:410,y:237},{x:700,y:297},{x:990,y:357},{x:1280,y:417},{x:1570,y:477}],
       enemies:[{x:60,y:168,type:'GOOMBA'},{x:390,y:228,type:'KOOPA'},{x:680,y:288,type:'GOOMBA'},{x:970,y:348,type:'GOOMBA'},{x:1260,y:408,type:'KOOPA'},{x:1550,y:468,type:'GOOMBA'}],
       powerUps:[{x:1000,y:353,type:'mushroom'}],
       flag:{x:2020,y:550}, playerStart:{x:60,y:140} },
-
-    // 9 — Cave long corridor
     { bg:'cave',
       platforms:[{x:0,y:550,w:300,h:50},{x:400,y:480,w:170,h:20},{x:670,y:410,w:170,h:20},{x:940,y:340,w:170,h:20},{x:1210,y:270,w:170,h:20},{x:1480,y:340,w:170,h:20},{x:1750,y:410,w:170,h:20},{x:2020,y:480,w:170,h:20},{x:2280,y:550,w:300,h:50}],
       coins:[{x:460,y:457},{x:730,y:387},{x:1000,y:317},{x:1270,y:247},{x:1540,y:317},{x:1810,y:387},{x:2080,y:457},{x:150,y:527},{x:2370,y:527}],
       enemies:[{x:450,y:448,type:'GOOMBA'},{x:720,y:378,type:'KOOPA'},{x:990,y:308,type:'GOOMBA'},{x:1260,y:238,type:'KOOPA'},{x:1530,y:308,type:'GOOMBA'},{x:1800,y:378,type:'KOOPA'}],
       powerUps:[{x:1010,y:312,type:'fireFlower'},{x:410,y:453,type:'mushroom'}],
       flag:{x:2460,y:550} },
-
-    // 10 — Sky tight jumps
     { bg:'sky',
       platforms:[{x:0,y:400,w:210,h:20},{x:290,y:370,w:130,h:20},{x:500,y:340,w:130,h:20},{x:710,y:310,w:130,h:20},{x:920,y:340,w:130,h:20},{x:1130,y:370,w:130,h:20},{x:1340,y:400,w:130,h:20},{x:1550,y:370,w:130,h:20},{x:1760,y:340,w:130,h:20},{x:1970,y:310,w:130,h:20},{x:2180,y:340,w:300,h:20}],
       coins:[{x:330,y:347},{x:540,y:317},{x:750,y:287},{x:960,y:317},{x:1170,y:347},{x:1380,y:377},{x:1590,y:347},{x:1800,y:317},{x:2010,y:287}],
       enemies:[{x:50,y:368,type:'GOOMBA'},{x:330,y:338,type:'KOOPA'},{x:750,y:278,type:'GOOMBA'},{x:960,y:308,type:'KOOPA'},{x:1590,y:338,type:'GOOMBA'},{x:2010,y:278,type:'KOOPA'}],
       powerUps:[{x:760,y:282,type:'mushroom'},{x:1810,y:312,type:'fireFlower'}],
       flag:{x:2380,y:340}, playerStart:{x:60,y:340} },
-
-    // 11 — Volcano: lava pits, fast enemies, tight corridors
     { bg:'boss',
       platforms:[{x:0,y:550,w:180,h:50},{x:250,y:550,w:160,h:50},{x:490,y:550,w:160,h:50},{x:730,y:550,w:160,h:50},{x:970,y:550,w:160,h:50},{x:1210,y:550,w:160,h:50},{x:1450,y:550,w:180,h:50},{x:140,y:460,w:120,h:20},{x:380,y:420,w:120,h:20},{x:620,y:380,w:120,h:20},{x:860,y:420,w:120,h:20},{x:1100,y:460,w:120,h:20},{x:1340,y:420,w:120,h:20}],
       coins:[{x:175,y:437},{x:415,y:397},{x:655,y:357},{x:895,y:397},{x:1135,y:437},{x:1375,y:397},{x:60,y:527},{x:560,y:527},{x:1100,y:527}],
       enemies:[{x:60,y:518,type:'GOOMBA'},{x:290,y:518,type:'KOOPA'},{x:770,y:518,type:'GOOMBA'},{x:1010,y:518,type:'KOOPA'},{x:630,y:348,type:'GOOMBA'},{x:1360,y:388,type:'KOOPA'}],
       powerUps:[{x:650,y:353,type:'fireFlower'}],
       flag:{x:1560,y:550} },
-
-    // 12 — Ice world: long slippery run with dense enemies
     { bg:'sky',
       platforms:[{x:0,y:550,w:600,h:50},{x:700,y:550,w:200,h:50},{x:1000,y:550,w:200,h:50},{x:1300,y:550,w:200,h:50},{x:1600,y:550,w:500,h:50},{x:200,y:440,w:180,h:20},{x:500,y:400,w:180,h:20},{x:850,y:460,w:180,h:20},{x:1150,y:420,w:180,h:20},{x:1450,y:460,w:180,h:20}],
       coins:[{x:260,y:417},{x:560,y:377},{x:900,y:437},{x:1200,y:397},{x:1490,y:437},{x:100,y:527},{x:750,y:527},{x:1050,y:527},{x:1700,y:527}],
       enemies:[{x:150,y:518,type:'KOOPA'},{x:400,y:518,type:'GOOMBA'},{x:750,y:518,type:'KOOPA'},{x:1050,y:518,type:'GOOMBA'},{x:1350,y:518,type:'KOOPA'},{x:870,y:428,type:'GOOMBA'},{x:1460,y:428,type:'KOOPA'}],
       powerUps:[{x:510,y:373,type:'mushroom'},{x:1170,y:393,type:'fireFlower'}],
       flag:{x:2000,y:550} },
-
-    // 13 — Forest: alternating high/low with lots of jumps
     { bg:'day',
       platforms:[{x:0,y:550,w:200,h:50},{x:280,y:480,w:140,h:20},{x:500,y:400,w:140,h:20},{x:720,y:480,w:140,h:20},{x:940,y:400,w:140,h:20},{x:1160,y:320,w:140,h:20},{x:1380,y:400,w:140,h:20},{x:1600,y:480,w:140,h:20},{x:1820,y:550,w:300,h:50}],
       coins:[{x:330,y:457},{x:550,y:377},{x:770,y:457},{x:990,y:377},{x:1210,y:297},{x:1430,y:377},{x:1650,y:457}],
       enemies:[{x:310,y:448,type:'GOOMBA'},{x:530,y:368,type:'KOOPA'},{x:970,y:368,type:'GOOMBA'},{x:1190,y:288,type:'KOOPA'},{x:1610,y:448,type:'GOOMBA'}],
       powerUps:[{x:1170,y:293,type:'fireFlower'},{x:295,y:453,type:'mushroom'}],
       flag:{x:2020,y:550} },
-
-    // 14 — Desert: very long run, lots of gaps, fast Koopas
     { bg:'sunset',
       platforms:[{x:0,y:550,w:300,h:50},{x:400,y:550,w:120,h:50},{x:620,y:550,w:120,h:50},{x:840,y:550,w:120,h:50},{x:1060,y:550,w:300,h:50},{x:1460,y:550,w:120,h:50},{x:1680,y:550,w:120,h:50},{x:1900,y:550,w:300,h:50},{x:200,y:450,w:150,h:20},{x:700,y:420,w:150,h:20},{x:1100,y:390,w:150,h:20},{x:1560,y:420,w:150,h:20},{x:2000,y:460,w:150,h:20}],
       coins:[{x:240,y:427},{x:450,y:527},{x:740,y:397},{x:870,y:527},{x:1140,y:367},{x:1600,y:397},{x:2030,y:437},{x:1090,y:527},{x:1760,y:527}],
       enemies:[{x:100,y:518,type:'KOOPA'},{x:450,y:518,type:'GOOMBA'},{x:720,y:388,type:'KOOPA'},{x:1120,y:358,type:'KOOPA'},{x:1460,y:518,type:'GOOMBA'},{x:1920,y:518,type:'KOOPA'},{x:2020,y:428,type:'GOOMBA'}],
       powerUps:[{x:760,y:393,type:'mushroom'},{x:1150,y:363,type:'fireFlower'}],
       flag:{x:2100,y:550} },
-
-    // 15 — Storm sky: diagonal rising platforms, fiercest enemies
     { bg:'night',
       platforms:[{x:0,y:500,w:200,h:20},{x:270,y:460,w:160,h:20},{x:510,y:420,w:160,h:20},{x:750,y:380,w:160,h:20},{x:990,y:340,w:160,h:20},{x:1230,y:300,w:160,h:20},{x:1470,y:340,w:160,h:20},{x:1710,y:380,w:160,h:20},{x:1950,y:420,w:160,h:20},{x:2190,y:460,w:280,h:20}],
       coins:[{x:50,y:477},{x:310,y:437},{x:550,y:397},{x:790,y:357},{x:1030,y:317},{x:1270,y:277},{x:1510,y:317},{x:1750,y:357},{x:1990,y:397},{x:2290,y:437}],
       enemies:[{x:40,y:468,type:'KOOPA'},{x:290,y:428,type:'GOOMBA'},{x:530,y:388,type:'KOOPA'},{x:770,y:348,type:'KOOPA'},{x:1010,y:308,type:'GOOMBA'},{x:1250,y:268,type:'KOOPA'},{x:1490,y:308,type:'GOOMBA'},{x:1730,y:348,type:'KOOPA'},{x:1970,y:388,type:'GOOMBA'}],
       powerUps:[{x:1010,y:313,type:'fireFlower'},{x:60,y:473,type:'mushroom'}],
       flag:{x:2380,y:460}, playerStart:{x:60,y:440} },
-
-    // 16 — Haunted ruins: crumbling platforms over abyss
     { bg:'night',
       platforms:[{x:0,y:550,w:220,h:50},{x:310,y:490,w:130,h:20},{x:530,y:430,w:130,h:20},{x:750,y:370,w:130,h:20},{x:970,y:430,w:130,h:20},{x:1190,y:490,w:130,h:20},{x:1410,y:430,w:130,h:20},{x:1630,y:370,w:130,h:20},{x:1860,y:550,w:260,h:50}],
       coins:[{x:360,y:467},{x:580,y:407},{x:800,y:347},{x:1020,y:407},{x:1240,y:467},{x:1460,y:407},{x:1680,y:347},{x:80,y:527},{x:1940,y:527}],
       enemies:[{x:330,y:458,type:'KOOPA'},{x:560,y:398,type:'GOOMBA'},{x:780,y:338,type:'KOOPA'},{x:1000,y:398,type:'KOOPA'},{x:1220,y:458,type:'GOOMBA'},{x:1440,y:398,type:'KOOPA'},{x:1650,y:338,type:'GOOMBA'}],
       powerUps:[{x:770,y:342,type:'fireFlower'},{x:340,y:462,type:'mushroom'}],
       flag:{x:2010,y:550} },
-
-    // 17 — Fortress: wide ground with wall towers to climb
     { bg:'cave',
       platforms:[{x:0,y:550,w:400,h:50},{x:500,y:550,w:300,h:50},{x:900,y:550,w:300,h:50},{x:1300,y:550,w:300,h:50},{x:1700,y:550,w:400,h:50},{x:120,y:430,w:140,h:20},{x:120,y:320,w:140,h:20},{x:550,y:400,w:140,h:20},{x:550,y:290,w:140,h:20},{x:960,y:430,w:140,h:20},{x:960,y:320,w:140,h:20},{x:1370,y:400,w:140,h:20},{x:1800,y:430,w:140,h:20}],
       coins:[{x:160,y:407},{x:160,y:297},{x:590,y:377},{x:590,y:267},{x:1000,y:407},{x:1000,y:297},{x:1410,y:377},{x:1840,y:407}],
       enemies:[{x:100,y:518,type:'GOOMBA'},{x:560,y:518,type:'KOOPA'},{x:960,y:518,type:'GOOMBA'},{x:1370,y:518,type:'KOOPA'},{x:1750,y:518,type:'GOOMBA'},{x:140,y:288,type:'KOOPA'},{x:570,y:258,type:'GOOMBA'}],
       powerUps:[{x:975,y:292,type:'fireFlower'},{x:130,y:402,type:'mushroom'}],
       flag:{x:1990,y:550} },
-
-    // 18 — Lava cavern: very narrow safe zones, enemies on every ledge
     { bg:'boss',
       platforms:[{x:0,y:550,w:160,h:50},{x:240,y:520,w:120,h:20},{x:450,y:480,w:120,h:20},{x:660,y:440,w:120,h:20},{x:870,y:400,w:120,h:20},{x:1080,y:440,w:120,h:20},{x:1290,y:480,w:120,h:20},{x:1500,y:520,w:120,h:20},{x:1700,y:550,w:260,h:50}],
       coins:[{x:285,y:497},{x:495,y:457},{x:705,y:417},{x:915,y:377},{x:1125,y:417},{x:1335,y:457},{x:1545,y:497},{x:60,y:527},{x:1790,y:527}],
       enemies:[{x:260,y:488,type:'KOOPA'},{x:470,y:448,type:'GOOMBA'},{x:680,y:408,type:'KOOPA'},{x:890,y:368,type:'KOOPA'},{x:1100,y:408,type:'GOOMBA'},{x:1310,y:448,type:'KOOPA'},{x:1520,y:488,type:'GOOMBA'}],
       powerUps:[{x:895,y:373,type:'fireFlower'}],
       flag:{x:1860,y:550} },
-
-    // 19 — Sky gauntlet: only floating platforms at two heights, heavy enemy coverage
     { bg:'sky',
       platforms:[{x:0,y:350,w:200,h:20},{x:280,y:430,w:160,h:20},{x:520,y:350,w:160,h:20},{x:760,y:430,w:160,h:20},{x:1000,y:350,w:160,h:20},{x:1240,y:430,w:160,h:20},{x:1480,y:350,w:160,h:20},{x:1720,y:430,w:160,h:20},{x:1960,y:350,w:280,h:20}],
       coins:[{x:50,y:327},{x:320,y:407},{x:560,y:327},{x:800,y:407},{x:1040,y:327},{x:1280,y:407},{x:1520,y:327},{x:1760,y:407},{x:2040,y:327}],
       enemies:[{x:40,y:318,type:'KOOPA'},{x:300,y:398,type:'GOOMBA'},{x:540,y:318,type:'KOOPA'},{x:780,y:398,type:'KOOPA'},{x:1020,y:318,type:'GOOMBA'},{x:1260,y:398,type:'KOOPA'},{x:1500,y:318,type:'GOOMBA'},{x:1740,y:398,type:'KOOPA'}],
       powerUps:[{x:1010,y:323,type:'fireFlower'},{x:50,y:323,type:'mushroom'}],
       flag:{x:2130,y:350}, playerStart:{x:60,y:300} },
-
-    // 20 — Chaos run: everything thrown at you before the boss
     { bg:'night',
       platforms:[{x:0,y:550,w:280,h:50},{x:380,y:510,w:120,h:20},{x:590,y:460,w:120,h:20},{x:800,y:410,w:120,h:20},{x:1010,y:460,w:120,h:20},{x:1220,y:510,w:120,h:20},{x:1430,y:460,w:120,h:20},{x:1640,y:410,w:120,h:20},{x:1850,y:550,w:320,h:50},{x:200,y:420,w:140,h:20},{x:650,y:340,w:140,h:20},{x:1100,y:340,w:140,h:20},{x:1700,y:340,w:140,h:20}],
       coins:[{x:415,y:487},{x:625,y:437},{x:835,y:387},{x:1045,y:437},{x:1255,y:487},{x:1465,y:437},{x:1675,y:387},{x:220,y:397},{x:670,y:317},{x:1120,y:317}],
       enemies:[{x:100,y:518,type:'GOOMBA'},{x:410,y:478,type:'KOOPA'},{x:620,y:428,type:'GOOMBA'},{x:820,y:378,type:'KOOPA'},{x:1030,y:428,type:'KOOPA'},{x:1240,y:478,type:'GOOMBA'},{x:1450,y:428,type:'KOOPA'},{x:1660,y:378,type:'GOOMBA'},{x:1900,y:518,type:'KOOPA'},{x:660,y:308,type:'GOOMBA'},{x:1110,y:308,type:'KOOPA'}],
       powerUps:[{x:670,y:313,type:'fireFlower'},{x:210,y:393,type:'mushroom'}],
       flag:{x:2060,y:550} },
-
-    // 21 — BOSS LEVEL (fireball only — no brawler)
     { bg:'boss', isBossLevel:true,
       platforms:[{x:0,y:550,w:950,h:50},{x:1100,y:550,w:950,h:50},{x:280,y:420,w:170,h:20},{x:600,y:360,w:170,h:20},{x:1230,y:360,w:170,h:20},{x:1560,y:420,w:170,h:20}],
       enemies:[],
@@ -397,13 +432,9 @@ function loadLevel(num) {
     powerUps  = lvl.powerUps ? lvl.powerUps.map(p => ({...p, collected:false})) : [];
     fireballs = []; bossFireballs = [];
 
-    // ---- Enemy patrol bounds (THE FIX for level 5 lag) ----
-    // Each enemy gets pMin/pMax from explicit data or auto-detected from its platform.
-    // Enemies only patrol their own platform — no cross-platform wandering, no instant direction reversal.
     enemies = (lvl.enemies||[]).map(e => {
         let pMin = e.patrolMin, pMax = e.patrolMax;
         if (pMin === undefined) {
-            // Find the platform directly under this enemy's spawn y
             for (const p of lvl.platforms) {
                 const enemyBottom = e.y + 32;
                 if (e.x + 20 >= p.x && e.x + 12 <= p.x + p.w && Math.abs(enemyBottom - p.y) < 50) {
@@ -478,14 +509,13 @@ function updatePlayer() {
 }
 
 // ============================================================
-//  UPDATE ENEMIES — patrol-bounded, no gravity jitter
+//  UPDATE ENEMIES
 // ============================================================
 function updateEnemies() {
     for (const e of enemies) {
         if (!e.active) continue;
         e.x += e.speed * e.dir;
 
-        // Platform landing — snap e.y to the platform it's on
         let onPlatform = false;
         for (const p of platforms) {
             if (e.x+32>p.x && e.x<p.x+p.w) {
@@ -497,11 +527,9 @@ function updateEnemies() {
         }
         if (!onPlatform) { e.vy+=GRAVITY*0.7; e.y+=e.vy; if(e.y>700){e.active=false;continue;} } else { e.vy=0; }
 
-        // Patrol reversal using computed bounds — prevents micro-oscillation
         if (e.x <= e.pMin) { e.x=e.pMin; e.dir=1; }
         else if (e.x+32 >= e.pMax) { e.x=e.pMax-32; e.dir=-1; }
 
-        // Player collision
         if (!player.invincible && player.x+player.w>e.x+4 && player.x<e.x+28 && player.y+player.h>e.y+4 && player.y<e.y+28) {
             if (player.velY>1 && player.y+player.h<e.y+16) {
                 e.active=false; player.velY=-9; gState.score+=200; updateHUD();
@@ -520,7 +548,6 @@ function updateEnemies() {
 function updateBoss() {
     if (!boss||!boss.active) return;
     boss.x += boss.moveSpeed * boss.moveDir;
-    // Keep boss on the ground platform
     for (const p of platforms) {
         if (boss.x+boss.w>p.x && boss.x<p.x+p.w && p.h>=40) {
             if (boss.y+boss.h >= p.y-2) { boss.y=p.y-boss.h; break; }
@@ -547,7 +574,6 @@ function updateFireballs() {
     fireballs = fireballs.filter(f => {
         f.x+=f.vx; f.y+=f.vy; f.vy+=0.25;
         if(f.y>545){f.y=545;f.vy=-Math.abs(f.vy)*0.55;}
-        // Hit boss with fireball
         if(boss&&boss.active&&f.x>boss.x&&f.x<boss.x+boss.w&&f.y>boss.y&&f.y<boss.y+boss.h){
             boss.health--;
             spawnParticles(boss.x+45,boss.y+32,18,{color:'#ff6600',size:4,life:28});
@@ -676,37 +702,23 @@ function drawBackground() {
     const cx=gState.cameraX,sx=shake.x,sy=shake.y;
     const lvl=levels[gState.currentLevel-1];
     const t=BG[lvl&&lvl.bg?lvl.bg:'day'];
-
-    // Clear entire canvas every frame — prevents ghost frames and double-floor artifacts
     ctx.clearRect(0,0,800,600);
-
-    // Sky fills the full canvas so no undrawn gaps ever appear
     const sg=ctx.createLinearGradient(0,0,0,600);
     sg.addColorStop(0,t.sky0);sg.addColorStop(0.65,t.sky1);sg.addColorStop(1,t.g0||t.sky1);
     ctx.fillStyle=sg;ctx.fillRect(0,0,800,600);
-
-    // Celestial body
     if(lvl.bg==='night'){ctx.fillStyle='rgba(255,255,220,0.9)';ctx.shadowColor='#ffffaa';ctx.shadowBlur=25;ctx.beginPath();ctx.arc(680-cx*0.04+sx,68+sy,20,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
     else if(lvl.bg!=='cave'&&lvl.bg!=='sky'){ctx.fillStyle='#fff9c4';ctx.shadowColor='#ffe082';ctx.shadowBlur=30;ctx.beginPath();ctx.arc(700-cx*0.04+sx,66+sy,30,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
-
-    // Clouds
     if(lvl.bg!=='cave'&&lvl.bg!=='boss'){
         ctx.fillStyle=lvl.bg==='night'?'rgba(50,50,110,0.4)':'rgba(255,255,255,0.88)';
         for(const c of cloudOffs){const cx2=((c.x-cx*0.28)%1050+1050)%1050;drawCloud(cx2+sx,c.y+sy,c.s);}
     }
-
-    // Mountains (parallax layer)
     ctx.fillStyle=t.mtn;
     for(let i=0;i<7;i++){const mx=((i*260-cx*0.14)+1800+sx)%1800-200,mh=70+Math.sin(i*1.9)*35;ctx.beginPath();ctx.moveTo(mx,420);ctx.lineTo(mx+130,420-mh);ctx.lineTo(mx+260,420);ctx.fill();}
-
-    // Ground fill drawn behind platforms
     if(t.g0){
         const gg=ctx.createLinearGradient(0,430,0,600);
         gg.addColorStop(0,t.g0);gg.addColorStop(0.3,t.g1);gg.addColorStop(1,'#0a0500');
         ctx.fillStyle=gg;ctx.fillRect(0,430,800,170);
     }
-
-    // Boss lava glow overlay
     if(lvl.bg==='boss'){const gl=Math.sin(frameCount*0.04)*0.06+0.07;ctx.fillStyle=`rgba(255,80,0,${gl})`;ctx.fillRect(0,0,800,600);}
 }
 function drawCloud(x,y,s){ctx.beginPath();ctx.arc(x,y,25*s,0,Math.PI*2);ctx.arc(x+30*s,y-10*s,30*s,0,Math.PI*2);ctx.arc(x+60*s,y,22*s,0,Math.PI*2);ctx.arc(x+30*s,y+10*s,25*s,0,Math.PI*2);ctx.fill();}
@@ -837,16 +849,12 @@ function drawFireballs(){
 function drawBoss(){
     if(!boss||!boss.active) return;
     const rx=boss.x-gState.cameraX+shake.x,ry=boss.y+shake.y;
-    // Lava shadow
     ctx.fillStyle='rgba(255,80,0,0.18)';ctx.beginPath();ctx.ellipse(rx+45,ry+90,58,20,0,0,Math.PI*2);ctx.fill();
-    // Shell
     ctx.fillStyle='#880000';ctx.beginPath();ctx.arc(rx+45,ry+45,43,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle='rgba(180,0,0,0.7)';ctx.lineWidth=2.5;
     for(let i=0;i<7;i++){const a=(i/7)*Math.PI*2;ctx.beginPath();ctx.arc(rx+45+Math.cos(a)*20,ry+45+Math.sin(a)*20,12,0,Math.PI*2);ctx.stroke();}
-    // Spikes
     ctx.fillStyle='#3d0000';
     for(let i=0;i<8;i++){const a=(i/8)*Math.PI*2+frameCount*0.012;ctx.save();ctx.translate(rx+45+Math.cos(a)*43,ry+45+Math.sin(a)*43);ctx.rotate(a);ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(-6,0);ctx.lineTo(6,0);ctx.closePath();ctx.fill();ctx.restore();}
-    // Face
     ctx.fillStyle='#ffcc80';ctx.beginPath();ctx.ellipse(rx+45,ry+40,26,20,0,0,Math.PI*2);ctx.fill();
     const ep=1+Math.sin(frameCount*0.12)*0.6;
     ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(rx+33,ry+34,9,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(rx+57,ry+34,9,0,Math.PI*2);ctx.fill();
@@ -854,7 +862,6 @@ function drawBoss(){
     ctx.beginPath();ctx.arc(rx+35,ry+34,6*ep,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(rx+59,ry+34,6*ep,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
     ctx.fillStyle='#660000';ctx.beginPath();ctx.moveTo(rx+28,ry+52);ctx.quadraticCurveTo(rx+45,ry+68,rx+62,ry+52);ctx.fill();
     ctx.fillStyle='#fff';ctx.fillRect(rx+31,ry+52,9,12);ctx.fillRect(rx+50,ry+52,9,12);
-    // HP ring
     const hpF=boss.health/boss.maxHealth,rc=hpF>0.6?'#ff8800':hpF>0.3?'#ff4400':'#ff0000';
     ctx.shadowColor=rc;ctx.shadowBlur=22+Math.sin(frameCount*0.1)*10;ctx.strokeStyle=rc;ctx.lineWidth=4;
     ctx.beginPath();ctx.arc(rx+45,ry+45,48,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;
@@ -912,5 +919,51 @@ function handleModalAction(){
 }
 function restartFromModal(){document.getElementById('modal').style.display='none';initGame();}
 </script>
+
+<!-- ===== GORDON'S GATE SCRIPT ===== -->
+<script>
+  (function() {
+    var SECRET_CODE = "G0RD0N";
+    var gate    = document.getElementById('gg-gate');
+    var input   = document.getElementById('gg-input');
+    var btn     = document.getElementById('gg-btn');
+    var box     = document.getElementById('gg-box');
+    var denied  = document.getElementById('gg-denied');
+    var granted = document.getElementById('gg-granted');
+    var active  = false, t;
+    function attempt() {
+      var val = input.value.toUpperCase().trim();
+      if (val === SECRET_CODE) {
+        denied.classList.remove('show');
+        granted.classList.add('show');
+        input.disabled = true;
+        btn.disabled = true;
+        setTimeout(function() {
+          gate.classList.add('gg-unlock');
+          setTimeout(function() { gate.style.display = 'none'; }, 900);
+        }, 600);
+      } else {
+        if (active) return;
+        active = true;
+        denied.classList.add('show');
+        box.classList.add('gg-shake');
+        gate.classList.add('gg-glitch');
+        input.value = '';
+        clearTimeout(t);
+        t = setTimeout(function() {
+          denied.classList.remove('show');
+          box.classList.remove('gg-shake');
+          gate.classList.remove('gg-glitch');
+          active = false;
+        }, 1200);
+      }
+    }
+    btn.addEventListener('click', attempt);
+    input.addEventListener('keydown', function(e) { if (e.key === 'Enter') attempt(); });
+    window.addEventListener('load', function() { setTimeout(function() { input.focus(); }, 150); });
+  })();
+</script>
+<!-- ===== END GORDON'S GATE SCRIPT ===== -->
+
 </body>
 </html>
