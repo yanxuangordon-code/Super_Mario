@@ -410,6 +410,89 @@
         .ta-toggle.on .ta-knob { transform:translateX(26px); background:var(--gold); box-shadow:0 0 8px rgba(255,215,0,0.5); }
         .ta-desc { font-size:6px; color:rgba(255,255,255,0.25); letter-spacing:1px; font-family:'Press Start 2P',monospace; }
         .sk-footer { position:relative; z-index:2; display:flex; gap:14px; align-items:center; padding:6px 0 12px; }
+        @keyframes flagPulse { from{opacity:1;} to{opacity:0.4;} }
+
+
+        /* ===== PAUSE MENU ===== */
+        #pauseOverlay {
+            position:absolute; inset:0; z-index:95;
+            background:rgba(0,0,0,0.78); display:none;
+            flex-direction:column; align-items:center; justify-content:center;
+            backdrop-filter:blur(6px);
+            font-family:'Press Start 2P',monospace;
+        }
+        .pause-box {
+            background:linear-gradient(135deg,#08081e,#10102e);
+            border:2px solid var(--gold); border-radius:4px;
+            padding:36px 50px; text-align:center;
+            box-shadow:0 0 50px rgba(255,215,0,0.15);
+            min-width:320px;
+        }
+        .pause-title { font-size:22px; color:var(--gold); text-shadow:3px 3px 0 #8B6914; margin-bottom:28px; letter-spacing:3px; }
+        .pause-stat { font-size:9px; color:rgba(255,255,255,0.5); margin-bottom:8px; letter-spacing:1px; }
+        .pause-stat span { color:var(--gold); }
+        .pause-btns { display:flex; flex-direction:column; gap:10px; margin-top:24px; }
+        .pause-btn { background:transparent; border:1px solid rgba(255,215,0,0.4); color:rgba(255,255,255,0.8); font-family:'Press Start 2P',monospace; font-size:9px; letter-spacing:2px; padding:10px 24px; border-radius:2px; cursor:pointer; transition:all 0.12s; }
+        .pause-btn:hover { background:rgba(255,215,0,0.12); border-color:var(--gold); color:var(--gold); }
+        .pause-btn.danger { border-color:rgba(255,60,60,0.4); color:rgba(255,150,150,0.7); }
+        .pause-btn.danger:hover { background:rgba(255,60,60,0.1); border-color:#ff4444; color:#ff8888; }
+
+        /* ===== ACHIEVEMENT TOAST ===== */
+        #achToast {
+            position:absolute; top:60px; right:-320px; z-index:92;
+            background:linear-gradient(135deg,#0a0a25,#14143a);
+            border:2px solid var(--gold); border-radius:4px;
+            padding:12px 18px; font-family:'Press Start 2P',monospace;
+            box-shadow:0 0 20px rgba(255,215,0,0.25);
+            transition:right 0.45s cubic-bezier(0.34,1.56,0.64,1);
+            min-width:270px; max-width:300px;
+        }
+        #achToast.show { right:14px; }
+        .ach-toast-top { font-size:7px; color:var(--gold); letter-spacing:2px; margin-bottom:5px; }
+        .ach-toast-name { font-size:10px; color:white; letter-spacing:1px; margin-bottom:4px; }
+        .ach-toast-desc { font-size:6px; color:rgba(255,255,255,0.45); letter-spacing:1px; line-height:1.6; }
+
+        /* ===== ACHIEVEMENT SCREEN ===== */
+        #achScreen { display:none; flex-direction:column; align-items:center; overflow:hidden; }
+        .ach-bg { position:absolute; inset:0; background:linear-gradient(160deg,#05051a 0%,#0a0a20 100%); }
+        .ach-header { position:relative; z-index:2; text-align:center; padding:18px 0 10px; width:100%; border-bottom:1px solid rgba(255,215,0,0.2); }
+        .ach-title { font-size:17px; color:var(--gold); text-shadow:3px 3px 0 #8B6914; letter-spacing:4px; }
+        .ach-grid { position:relative; z-index:2; display:grid; grid-template-columns:repeat(2,1fr); gap:10px; padding:14px 22px; width:100%; overflow-y:auto; max-height:440px; }
+        .ach-card { border:1px solid rgba(255,215,0,0.2); border-radius:3px; padding:12px 14px; background:rgba(255,255,255,0.03); display:flex; gap:12px; align-items:center; }
+        .ach-card.unlocked { border-color:rgba(255,215,0,0.5); background:rgba(255,215,0,0.06); }
+        .ach-icon { font-size:22px; flex-shrink:0; filter:grayscale(1) opacity(0.3); }
+        .ach-card.unlocked .ach-icon { filter:none; }
+        .ach-info { flex:1; }
+        .ach-name { font-size:8px; color:rgba(255,255,255,0.4); letter-spacing:1px; margin-bottom:4px; font-family:'Press Start 2P',monospace; }
+        .ach-card.unlocked .ach-name { color:white; }
+        .ach-desc { font-size:6px; color:rgba(255,255,255,0.25); letter-spacing:0.5px; line-height:1.6; font-family:'Press Start 2P',monospace; }
+        .ach-card.unlocked .ach-desc { color:rgba(255,255,255,0.45); }
+        .ach-footer { position:relative; z-index:2; display:flex; gap:14px; align-items:center; padding:8px 0 12px; }
+
+        /* ===== LEVEL PREVIEW TOOLTIP ===== */
+        #lvlPreview {
+            position:absolute; z-index:60;
+            background:linear-gradient(135deg,#08081e,#12123a);
+            border:1px solid rgba(255,215,0,0.4); border-radius:3px;
+            padding:10px 14px; font-family:'Press Start 2P',monospace;
+            pointer-events:none; display:none; min-width:160px;
+            box-shadow:0 6px 20px rgba(0,0,0,0.6);
+        }
+        .lvlp-num { font-size:9px; color:var(--gold); margin-bottom:5px; }
+        .lvlp-name { font-size:7px; color:white; margin-bottom:6px; letter-spacing:1px; }
+        .lvlp-stars { font-size:11px; margin-bottom:5px; }
+        .lvlp-best { font-size:6px; color:rgba(255,255,255,0.4); letter-spacing:1px; }
+        .lvlp-type { font-size:6px; letter-spacing:1px; margin-top:4px; }
+
+        /* ===== DAMAGE FLASH ===== */
+        #damageFlash {
+            position:absolute; inset:0; z-index:88;
+            background:rgba(255,0,0,0); pointer-events:none;
+            transition:background 0.05s;
+        }
+
+        /* ===== COMBO ===== */
+        @keyframes comboPop { 0%{transform:scale(0.7);opacity:0;} 30%{transform:scale(1.3);opacity:1;} 70%{transform:scale(1);opacity:1;} 100%{transform:scale(0.9);opacity:0;} }
     </style>
 </head>
 <body>
@@ -447,6 +530,7 @@
     </div>
     <button class="menu-btn" onclick="showLevelSelect()">▶ PLAY</button>
     <button class="menu-btn" onclick="showSkinScreen()">👕 SKINS</button>
+    <button class="menu-btn" onclick="showAchievements()">🏅 ACHIEVEMENTS</button>
     <button class="menu-btn" onclick="showSettingsMenu()">⚙ SETTINGS</button>
     <div class="menu-credit">CLEAR WORLDS TO UNLOCK NEW SKINS · FIRE KEY: K</div>
     <div id="settingsPanel">
@@ -479,6 +563,18 @@
     </div>
 </div>
 
+<!-- ACHIEVEMENTS -->
+<div id="achScreen" class="screen">
+    <div class="ach-bg"></div>
+    <div class="ach-header">
+        <div class="ach-title">🏅 ACHIEVEMENTS</div>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+    <div class="ach-footer">
+        <button class="ls-back-btn" onclick="showMenu()">◀ BACK</button>
+    </div>
+</div>
+
 <!-- LEVEL SELECT -->
 <div id="levelSelectScreen" class="screen">
     <div class="ls-bg"></div>
@@ -498,6 +594,27 @@
 <!-- GAME -->
 <div id="gameContainer" class="screen">
     <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="damageFlash"></div>
+    <div id="achToast">
+        <div class="ach-toast-top">🏅 ACHIEVEMENT UNLOCKED</div>
+        <div class="ach-toast-name" id="achToastName">—</div>
+        <div class="ach-toast-desc" id="achToastDesc">—</div>
+    </div>
+    <!-- PAUSE OVERLAY -->
+    <div id="pauseOverlay">
+        <div class="pause-box">
+            <div class="pause-title">⏸ PAUSED</div>
+            <div class="pause-stat">LEVEL <span id="pauseLvl">1</span></div>
+            <div class="pause-stat">SCORE <span id="pauseScore">0</span></div>
+            <div class="pause-stat">SKIN <span id="pauseSkin">ADVENTURER</span></div>
+            <div class="pause-btns">
+                <button class="pause-btn" onclick="resumeGame()">▶ RESUME</button>
+                <button class="pause-btn" onclick="showSkinScreen()">👕 CHANGE SKIN</button>
+                <button class="pause-btn" onclick="restartLevel()">↻ RESTART LEVEL</button>
+                <button class="pause-btn danger" onclick="pauseToMenu()">⬅ MAIN MENU</button>
+            </div>
+        </div>
+    </div>
 
     <!-- LEVEL COMPLETE OVERLAY -->
     <div id="lcOverlay">
@@ -532,7 +649,17 @@
         <div class="hud-item" style="margin-left:10px;"><span class="hud-label">SKIN</span><span class="hud-val" id="skinDisp" style="font-size:9px;color:#aaa;">ADVENTURER</span></div>
         <button id="menuBackBtn" onclick="confirmBackToMenu()" style="margin-left:18px;background:transparent;border:1px solid rgba(255,215,0,0.45);color:rgba(255,215,0,0.85);font-family:'Press Start 2P',monospace;font-size:7px;letter-spacing:1px;padding:5px 10px;border-radius:2px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,215,0,0.15)'" onmouseout="this.style.background='transparent'">⬅ MENU</button>
     </div>
-    <div id="bossBar"><div class="boss-name">⚠ BOWSER ⚠</div><div class="boss-bar-bg"><div id="bossHealth" style="width:100%;"></div></div></div>
+    <div id="bossBar">
+        <div class="boss-name">⚠ BOWSER ⚠</div>
+        <div class="boss-bar-bg"><div id="bossHealth" style="width:100%;"></div></div>
+        <div id="bossObjectives" style="display:none;margin-top:6px;font-size:8px;font-family:'Press Start 2P',monospace;text-align:center;">
+            <span id="objBoss" style="color:#ff4444;">💀 BOSS: ALIVE</span>
+            &nbsp;&nbsp;
+            <span id="objEnemies" style="color:#ffaa00;">👾 ENEMIES: 0</span>
+            &nbsp;&nbsp;
+            <span id="objFlag" style="color:rgba(255,255,255,0.3);">🚩 FLAG: LOCKED</span>
+        </div>
+    </div>
     <div id="powerupBar"></div>
     <div id="flagInfo">GOAL X:<span id="flagX">0</span> &nbsp; YOU X:<span id="playerX">0</span></div>
     <div id="modal" style="display:none;">
@@ -601,7 +728,41 @@ function isSkinUnlocked(idx) {
     return levelProgress.highestUnlocked > SKINS[idx].unlockLevel || SKINS[idx].unlockLevel === 1;
 }
 
-// ── TIME ATTACK ───────────────────────────────────────────────
+// ── COMBO SYSTEM ─────────────────────────────────────────────
+let comboCount = 0, comboTimer = 0;
+const COMBO_WINDOW = 90; // frames
+
+// ── WALL JUMP ─────────────────────────────────────────────────
+// tracked in player object: wallSliding, wallDir, wallJumpCooldown
+
+// ── SECRET STARS ─────────────────────────────────────────────
+// Each level can have secretStars array in level data; stored in progress
+let secretStarObjs = []; // live star objects this level
+
+// ── ACHIEVEMENTS ─────────────────────────────────────────────
+const ACHIEVEMENTS = [
+    { id:'first_blood',  icon:'⚔️',  name:'FIRST BLOOD',      desc:'Stomp your first enemy',          check: s => s.totalStomp >= 1 },
+    { id:'coin_hoarder', icon:'🪙',  name:'COIN HOARDER',     desc:'Collect 100 coins total',         check: s => s.totalCoins >= 100 },
+    { id:'speedster',    icon:'⚡',  name:'SPEEDSTER',         desc:'Complete a level under 30s',      check: s => s.bestLevelTime <= 30 },
+    { id:'explorer',     icon:'🗺️',  name:'EXPLORER',          desc:'Unlock 10 levels',                check: s => levelProgress.highestUnlocked >= 10 },
+    { id:'sky_high',     icon:'☁️',  name:'SKY HIGH',          desc:'Reach World 4 (Sky)',             check: s => levelProgress.highestUnlocked >= 16 },
+    { id:'untouchable',  icon:'🛡️',  name:'UNTOUCHABLE',       desc:'Clear a level without getting hit',check: s => s.flawlessLevel },
+    { id:'pyro',         icon:'🔥',  name:'PYRO',              desc:'Fire 50 fireballs',               check: s => s.totalFireballs >= 50 },
+    { id:'boss_slayer',  icon:'💀',  name:'BOSS SLAYER',       desc:'Defeat your first boss',          check: s => s.totalBossKills >= 1 },
+    { id:'star_hunter',  icon:'⭐',  name:'STAR HUNTER',       desc:'Find 5 secret stars',             check: s => s.totalSecretStars >= 5 },
+    { id:'wall_rat',     icon:'🧗',  name:'WALL RAT',          desc:'Wall jump 10 times',              check: s => s.totalWallJumps >= 10 },
+    { id:'combo_king',   icon:'👑',  name:'COMBO KING',        desc:'Get a 5x kill combo',             check: s => s.bestCombo >= 5 },
+    { id:'quest_done',   icon:'🏆',  name:'QUEST COMPLETE',    desc:'Beat all 30 levels',              check: s => levelProgress.highestUnlocked > 30 },
+];
+let achStats = JSON.parse(localStorage.getItem('gordonAchStats') || '{}');
+let unlockedAchs = JSON.parse(localStorage.getItem('gordonAchs') || '[]');
+function saveAchs() { try { localStorage.setItem('gordonAchs', JSON.stringify(unlockedAchs)); localStorage.setItem('gordonAchStats', JSON.stringify(achStats)); } catch(e){} }
+
+// ── PAUSE ─────────────────────────────────────────────────────
+let gamePaused = false;
+
+// ── DAMAGE FLASH ─────────────────────────────────────────────
+let damageFlashTimer = 0;
 let timeAttackMode = false;
 let levelStartTime = 0;
 let bestTimes = JSON.parse(localStorage.getItem('gordonBestTimes') || '{}');
@@ -782,6 +943,7 @@ function buildLevelGrid() {
         const isBoss = i % 5 === 0;
         const isUnlocked = i <= levelProgress.highestUnlocked;
         const isCompleted = !!levelProgress.completed[i];
+        const secretStarCount = (levelProgress.secretStars && levelProgress.secretStars[i]) || 0;
 
         cell.className = 'ls-cell' +
             (isBoss ? ' boss-cell' : '') +
@@ -817,6 +979,7 @@ function buildLevelGrid() {
             const star = document.createElement('div');
             star.className = 'ls-star';
             star.textContent = '⭐';
+            if (secretStarCount > 0) star.textContent += '★'.repeat(secretStarCount);
             cell.appendChild(star);
         }
 
@@ -825,10 +988,52 @@ function buildLevelGrid() {
         if (isUnlocked) {
             const lvNum = i;
             cell.addEventListener('click', () => startFromLevel(lvNum));
+            // Hover preview
+            cell.addEventListener('mouseenter', (ev) => showLevelPreview(lvNum, ev.currentTarget));
+            cell.addEventListener('mouseleave', () => hideLevelPreview());
         }
 
         grid.appendChild(cell);
     }
+}
+
+function showLevelPreview(lvNum, cell) {
+    const preview = document.getElementById('lvlPreview');
+    const lvl = levels[lvNum - 1];
+    if (!lvl) return;
+    const isBoss = lvNum % 5 === 0;
+    const best = bestTimes[`level_${lvNum}`];
+    const bestStr = best ? `${Math.floor(best/60)}:${(best%60).toString().padStart(2,'0')}` : '--:--';
+    const secretCount = (levelProgress.secretStars && levelProgress.secretStars[lvNum]) || 0;
+    const maxStars = Math.min(1 + Math.floor(lvNum / 6), 3);
+
+    document.getElementById('lvlpNum').textContent = `LEVEL ${lvNum}`;
+    document.getElementById('lvlpName').textContent = lvl.name || `LEVEL ${lvNum}`;
+    document.getElementById('lvlpStars').textContent = '⭐'.repeat(secretCount) + '☆'.repeat(Math.max(0, maxStars - secretCount));
+    document.getElementById('lvlpBest').textContent = `BEST: ${bestStr}`;
+    const typeEl = document.getElementById('lvlpType');
+    if (isBoss) {
+        typeEl.textContent = '⚠ BOSS LEVEL';
+        typeEl.style.color = '#ff4444';
+    } else {
+        typeEl.textContent = lvl.bg ? lvl.bg.toUpperCase() + ' WORLD' : '';
+        typeEl.style.color = 'rgba(255,215,0,0.5)';
+    }
+
+    // Position tooltip near the cell
+    const rect = cell.getBoundingClientRect();
+    const screenRect = document.getElementById('levelSelectScreen').getBoundingClientRect();
+    let left = rect.left - screenRect.left + rect.width + 6;
+    let top = rect.top - screenRect.top;
+    if (left + 180 > 800) left = rect.left - screenRect.left - 186;
+    if (top + 120 > 580) top = 580 - 120;
+    preview.style.left = left + 'px';
+    preview.style.top = top + 'px';
+    preview.style.display = 'block';
+}
+
+function hideLevelPreview() {
+    document.getElementById('lvlPreview').style.display = 'none';
 }
 
 // ============================================================
@@ -911,6 +1116,12 @@ function activateHackerCheat() {
 // ============================================================
 document.addEventListener('keydown', e => {
     if (document.getElementById('gameContainer').style.display !== 'flex') return;
+    // Pause on Escape or P
+    if (e.code === 'Escape' || e.code === 'KeyP') {
+        if (gamePaused) resumeGame(); else pauseGame();
+        return;
+    }
+    if (gamePaused) return;
     keys[e.code] = true;
     rainbowInput += e.key.toLowerCase();
     if (rainbowInput.length > 10) rainbowInput = rainbowInput.slice(-10);
@@ -923,6 +1134,19 @@ document.addEventListener('keydown', e => {
             player.velY = jf; player.grounded = false; player.doubleJumpUsed = false;
             screenShake(3, 8);
             spawnParticles(player.x+16, player.y+player.h, 4, {color:'rgba(255,255,255,0.4)', size:2, life:12});
+        } else if (player.wallSliding && player.wallJumpCooldown <= 0) {
+            // Wall jump
+            player.velY = jf * 0.9;
+            player.velX = -player.wallDir * MOVE_SPEED * getSkinBuff().speed * 1.4;
+            player.facing = -player.wallDir;
+            player.wallSliding = false;
+            player.doubleJumpUsed = false;
+            player.wallJumpCooldown = 14;
+            if (!achStats) achStats = {};
+            achStats.totalWallJumps = (achStats.totalWallJumps || 0) + 1;
+            saveAchs(); checkAchievements();
+            spawnParticles(player.x + (player.wallDir > 0 ? player.w : 0), player.y + player.h * 0.5, 12, {color:'#88eeff', size:3, life:20});
+            screenShake(3, 6);
         } else if (!player.doubleJumpUsed) {
             player.velY = jf * 0.85; player.doubleJumpUsed = true;
             spawnParticles(player.x+16, player.y+player.h/2, 10, {color:'#88eeff', size:3, life:18});
@@ -930,7 +1154,12 @@ document.addEventListener('keydown', e => {
         }
     }
     if (e.key.toUpperCase() === fireKey) {
-        if (player.powerUp === 'fire') shootFireball();
+        if (player.powerUp === 'fire') {
+            shootFireball();
+            if (!achStats) achStats = {};
+            achStats.totalFireballs = (achStats.totalFireballs || 0) + 1;
+            if (achStats.totalFireballs % 10 === 0) { saveAchs(); checkAchievements(); }
+        }
         if (player.isRainbow) {
             player.velY = -12;
             spawnParticles(player.x+16, player.y+player.h, 12, {color:'#00ffff', size:3, life:20});
@@ -1050,9 +1279,10 @@ const levels = [
              {x:260,y:417},{x:780,y:387},{x:1180,y:357},{x:1580,y:387},{x:1980,y:417},
              {x:2380,y:387},{x:2780,y:357}],
       enemies:[{x:120,y:518,type:'GOOMBA'},{x:700,y:518,type:'KOOPA'},{x:1100,y:518,type:'GOOMBA'},
-               {x:1500,y:518,type:'GOOMBA'},{x:1900,y:518,type:'KOOPA'},{x:2300,y:518,type:'GOOMBA'},
-               {x:2700,y:518,type:'KOOPA'},{x:3100,y:518,type:'GOOMBA'},
-               {x:800,y:378,type:'KOOPA'},{x:2800,y:348,type:'GOOMBA'}],
+               {x:1500,y:518,type:'TANK'},{x:1900,y:518,type:'KOOPA'},{x:2300,y:518,type:'GOOMBA'},
+               {x:2700,y:518,type:'TANK'},{x:3100,y:518,type:'GOOMBA'},
+               {x:800,y:300,type:'FLYER'},{x:1900,y:310,type:'FLYER'},{x:2800,y:290,type:'FLYER'},
+               {x:1180,y:348,type:'KOOPA'}],
       powerUps:[{x:220,y:414,type:'mushroom'},{x:2320,y:384,type:'fireFlower'}],
       flag:{x:3200,y:550} },
 
@@ -1643,7 +1873,7 @@ function initGame(startLevel) {
 }
 
 function mkPlayer() {
-    return {x:100,y:380,w:32,h:32,velX:0,velY:0,grounded:false,powerUp:'small',invincible:false,invincibleTimer:0,fireTimer:0,fireCooldown:0,facing:1,isRainbow:false,rainbowTimer:0,walkFrame:0,walkTimer:0,doubleJumpUsed:false};
+    return {x:100,y:380,w:32,h:32,velX:0,velY:0,grounded:false,powerUp:'small',invincible:false,invincibleTimer:0,fireTimer:0,fireCooldown:0,facing:1,isRainbow:false,rainbowTimer:0,walkFrame:0,walkTimer:0,doubleJumpUsed:false,wallSliding:false,wallDir:0,wallJumpCooldown:0};
 }
 
 function loadLevel(num) {
@@ -1660,6 +1890,8 @@ function loadLevel(num) {
     turrets = (lvl.turrets||[]).map(t => ({...t, cooldown:t.cooldown||90, timer:Math.floor(Math.random()*80)}));
     turretBullets = []; rangerFireballs = [];
     levelStartTime = Date.now();
+    secretStarObjs = generateSecretStars(lvl, num);
+    comboCount = 0; comboTimer = 0;
 
     enemies = (lvl.enemies||[]).map(e => {
         let pMin = e.patrolMin, pMax = e.patrolMax;
@@ -1682,10 +1914,11 @@ function loadLevel(num) {
     gState.cameraX = 0; gState.levelComplete = false;
 
     boss = lvl.isBossLevel
-        ? {active:true, x:1500, y:460, w:90, h:90, health:8, maxHealth:8, fireCooldown:70, moveDir:1, moveSpeed:1.3}
-        : {active:false};
+        ? {active:true, x:1500, y:460, w:90, h:90, health:8, maxHealth:8, fireCooldown:70, moveDir:1, moveSpeed:1.3, defeated:false}
+        : {active:false, defeated:false};
 
     document.getElementById('bossBar').style.display = lvl.isBossLevel ? 'block' : 'none';
+    document.getElementById('bossObjectives').style.display = lvl.isBossLevel ? 'block' : 'none';
     if (lvl.isBossLevel) updateBossBar();
     document.getElementById('flagX').textContent = lvl.flag ? lvl.flag.x : 0;
     updateHUD();
@@ -1743,6 +1976,31 @@ function updatePlayer() {
         }
     }
     if (player.grounded) player.doubleJumpUsed = false;
+    if (player.wallJumpCooldown > 0) player.wallJumpCooldown--;
+
+    // Wall slide detection — touching a wall while falling and pressing into it
+    player.wallSliding = false;
+    if (!player.grounded && player.velY > 0) {
+        const pressingLeft  = keys['ArrowLeft']  || keys['KeyA'];
+        const pressingRight = keys['ArrowRight'] || keys['KeyD'];
+        for (const p of platforms) {
+            // Right wall
+            if (pressingRight && player.x + player.w >= p.x && player.x + player.w <= p.x + 8 &&
+                player.y + player.h > p.y + 4 && player.y < p.y + p.h - 4) {
+                player.wallSliding = true; player.wallDir = 1;
+                player.velY = Math.min(player.velY, 2.5); // slow fall
+                break;
+            }
+            // Left wall
+            if (pressingLeft && player.x <= p.x + p.w && player.x >= p.x + p.w - 8 &&
+                player.y + player.h > p.y + 4 && player.y < p.y + p.h - 4) {
+                player.wallSliding = true; player.wallDir = -1;
+                player.velY = Math.min(player.velY, 2.5);
+                break;
+            }
+        }
+    }
+    if (!player.wallSliding) player.wallDir = 0;
 
     if (player.y > 700) loseLife();
 
@@ -1779,8 +2037,88 @@ function updatePlayer() {
 function updateEnemies() {
     for (const e of enemies) {
         if (!e.active) continue;
-        e.x += e.speed * e.dir;
 
+        // FLYER: hovers at baseY, swoops toward player when close
+        if (e.type === 'FLYER') {
+            if (e.baseY === undefined) e.baseY = e.y;
+            e.floatT = (e.floatT||0) + 0.04;
+            const targetY = e.baseY + Math.sin(e.floatT) * 28;
+            const dxP = (player.x+16) - (e.x+16);
+            if (Math.abs(dxP) < 350) {
+                // Swoop toward player horizontally
+                e.x += dxP > 0 ? e.speed * 1.2 : -e.speed * 1.2;
+                e.dir = dxP > 0 ? 1 : -1;
+            } else {
+                e.x += e.speed * e.dir;
+                if (e.x <= e.pMin) { e.x=e.pMin; e.dir=1; }
+                else if (e.x+32 >= e.pMax) { e.x=e.pMax-32; e.dir=-1; }
+            }
+            e.y += (targetY - e.y) * 0.1;
+            if (!player.invincible && player.x+player.w>e.x+4 && player.x<e.x+28 && player.y+player.h>e.y+4 && player.y<e.y+28) {
+                if (player.velY>1 && player.y+player.h<e.y+16) {
+                    e.active=false; player.velY=-9;
+                    const pts=Math.round(250*getSkinBuff().scoreBonus); gState.score+=pts; updateHUD();
+                    screenShake(4,10); spawnParticles(e.x+16,e.y,12,{color:'#00ffcc',size:3,life:22});
+                    addScorePopup(e.x+16,e.y-8,`+${pts}`,'#00ffcc');
+                    registerKill(e.x+16,e.y);
+                    if(!achStats) achStats={};
+                    achStats.totalStomp=(achStats.totalStomp||0)+1; saveAchs(); checkAchievements();
+                    checkBossEnemiesCleared();
+                } else if(player.isRainbow) {
+                    e.active=false;
+                    const pts=Math.round(250*getSkinBuff().scoreBonus); gState.score+=pts; updateHUD();
+                    spawnParticles(e.x+16,e.y,14,{color:'#ff00ff',size:3,life:25});
+                    addScorePopup(e.x+16,e.y-8,`+${pts}`,'#ff88ff');
+                    registerKill(e.x+16,e.y); checkBossEnemiesCleared();
+                } else { hitPlayer(); }
+            }
+            continue;
+        }
+
+        // TANK: armoured, 2 hits, immune to fireballs
+        if (e.type === 'TANK') {
+            if (e.hp === undefined) e.hp = 2;
+            e.x += e.speed * 0.6 * e.dir; // slower
+            let onPlatform = false;
+            for (const p of platforms) {
+                if (e.x+40>p.x && e.x<p.x+p.w) {
+                    const bot = e.y+40;
+                    if (bot>=p.y-5 && bot<=p.y+20 && e.vy>=0) { e.y=p.y-40; e.vy=0; onPlatform=true; break; }
+                }
+            }
+            if (!onPlatform) { e.vy+=GRAVITY*0.7; e.y+=e.vy; if(e.y>700){e.active=false;continue;} } else { e.vy=0; }
+            if (e.x<=e.pMin){e.x=e.pMin;e.dir=1;} else if(e.x+40>=e.pMax){e.x=e.pMax-40;e.dir=-1;}
+            if (!player.invincible && player.x+player.w>e.x+4 && player.x<e.x+36 && player.y+player.h>e.y+4 && player.y<e.y+36) {
+                if (player.velY>1 && player.y+player.h<e.y+18) {
+                    e.hp--; player.velY=-9;
+                    screenShake(6,12); spawnParticles(e.x+20,e.y,14,{color:'#aaa',size:3,life:22});
+                    if (e.hp<=0) {
+                        e.active=false;
+                        const pts=Math.round(400*getSkinBuff().scoreBonus); gState.score+=pts; updateHUD();
+                        addScorePopup(e.x+20,e.y-8,`+${pts}`,'#ffffff');
+                        registerKill(e.x+20,e.y); checkBossEnemiesCleared();
+                        if(!achStats) achStats={};
+                        achStats.totalStomp=(achStats.totalStomp||0)+1; saveAchs(); checkAchievements();
+                    } else {
+                        // Shell breaks — stagger
+                        addScorePopup(e.x+20,e.y-8,'CRACKED!','#ffaa00');
+                        if(e.stunTimer===undefined) e.stunTimer=0;
+                        e.stunTimer=30;
+                    }
+                } else if(player.isRainbow) {
+                    e.active=false;
+                    const pts=Math.round(400*getSkinBuff().scoreBonus); gState.score+=pts; updateHUD();
+                    spawnParticles(e.x+20,e.y,18,{color:'#ff00ff',size:4,life:28});
+                    addScorePopup(e.x+20,e.y-8,`+${pts}`,'#ff88ff');
+                    registerKill(e.x+20,e.y); checkBossEnemiesCleared();
+                } else { hitPlayer(); }
+            }
+            if(e.stunTimer>0) e.stunTimer--;
+            continue;
+        }
+
+        // GOOMBA / KOOPA / RANGER — original logic
+        e.x += e.speed * e.dir;
         let onPlatform = false;
         for (const p of platforms) {
             if (e.x+32>p.x && e.x<p.x+p.w) {
@@ -1791,7 +2129,6 @@ function updateEnemies() {
             }
         }
         if (!onPlatform) { e.vy+=GRAVITY*0.7; e.y+=e.vy; if(e.y>700){e.active=false;continue;} } else { e.vy=0; }
-
         if (e.x <= e.pMin) { e.x=e.pMin; e.dir=1; }
         else if (e.x+32 >= e.pMax) { e.x=e.pMax-32; e.dir=-1; }
 
@@ -1802,12 +2139,19 @@ function updateEnemies() {
                 gState.score+=pts; updateHUD();
                 screenShake(4,10); spawnParticles(e.x+16,e.y,10,{color:'#bbb',size:2,life:20});
                 addScorePopup(e.x+16,e.y-8,`+${pts}`,'#ffffff');
+                registerKill(e.x+16, e.y);
+                if (!achStats) achStats = {};
+                achStats.totalStomp = (achStats.totalStomp||0)+1;
+                saveAchs(); checkAchievements();
+                checkBossEnemiesCleared();
             } else if (player.isRainbow) {
                 e.active=false;
                 const pts = Math.round(200 * getSkinBuff().scoreBonus);
                 gState.score+=pts; updateHUD();
                 spawnParticles(e.x+16,e.y,12,{color:'#ff00ff',size:3,life:25});
                 addScorePopup(e.x+16,e.y-8,`+${pts}`,'#ff88ff');
+                registerKill(e.x+16, e.y);
+                checkBossEnemiesCleared();
             } else { hitPlayer(); }
         }
     }
@@ -1836,7 +2180,26 @@ function updateBoss() {
     }
     updateBossBar();
 }
-function updateBossBar() { document.getElementById('bossHealth').style.width=`${Math.max(0,boss.health/boss.maxHealth)*100}%`; }
+function updateBossBar() {
+    document.getElementById('bossHealth').style.width=`${Math.max(0,boss.health/boss.maxHealth)*100}%`;
+    const lvl = levels[gState.currentLevel-1];
+    if(!lvl||!lvl.isBossLevel) return;
+    const objDiv = document.getElementById('bossObjectives');
+    objDiv.style.display='block';
+    const aliveEnemies = enemies.filter(e=>e.active).length;
+    const bossDefeated = boss.defeated || !boss.active;
+    const flagUnlocked = bossDefeated && aliveEnemies===0;
+    document.getElementById('objBoss').innerHTML =
+        bossDefeated ? '<span style="color:#00ff88">✅ BOSS: DEAD</span>' : '<span style="color:#ff4444">💀 BOSS: ALIVE</span>';
+    document.getElementById('objEnemies').innerHTML =
+        aliveEnemies===0
+            ? '<span style="color:#00ff88">✅ ENEMIES: CLEAR</span>'
+            : `<span style="color:#ffaa00">👾 ENEMIES: ${aliveEnemies}</span>`;
+    document.getElementById('objFlag').innerHTML =
+        flagUnlocked
+            ? '<span style="color:#00e5ff;animation:flagPulse 0.8s infinite alternate">🚩 FLAG: OPEN</span>'
+            : '<span style="color:rgba(255,255,255,0.3)">🚩 FLAG: LOCKED</span>';
+}
 
 // ============================================================
 //  FIREBALLS / COINS / POWER-UPS / FLAG
@@ -1849,13 +2212,33 @@ function updateFireballs() {
             boss.health--;
             spawnParticles(boss.x+45,boss.y+32,18,{color:'#ff6600',size:4,life:28});
             screenShake(8,14); updateBossBar();
-            if(boss.health<=0){boss.active=false;gState.score+=5000;updateHUD();setTimeout(()=>completeLevel(),700);}
+            if(boss.health<=0){
+                boss.active=false;
+                boss.defeated=true;
+                gState.score+=5000; updateHUD();
+                screenShake(20,30);
+                spawnParticles(boss.x+45,boss.y+45,60,{color:'#ff6600',size:5,life:60});
+                spawnParticles(boss.x+45,boss.y+45,40,{color:'#ffd700',size:4,life:50});
+                // Show "now clear enemies!" message if any remain
+                const aliveCount = enemies.filter(e=>e.active).length;
+                if(aliveCount>0){
+                    showBossPhaseMessage(`BOSS DOWN! ${aliveCount} ENEMY${aliveCount>1?'S':''} REMAIN!`);
+                } else {
+                    showBossPhaseMessage('BOSS DOWN! REACH THE FLAG!');
+                }
+            }
             return false;
         }
         for(const e of enemies){
-            if(e.active&&f.x>e.x&&f.x<e.x+32&&f.y>e.y&&f.y<e.y+32){
-                e.active=false;gState.score+=200;updateHUD();
-                spawnParticles(e.x+16,e.y+16,12,{color:'#ff6600',size:3,life:25}); return false;
+            if(e.active&&e.type!=='TANK'&&f.x>e.x&&f.x<e.x+32&&f.y>e.y&&f.y<e.y+32){
+                e.active=false;
+                const pts=Math.round(200*getSkinBuff().scoreBonus);
+                gState.score+=pts;updateHUD();
+                spawnParticles(e.x+16,e.y+16,12,{color:'#ff6600',size:3,life:25});
+                addScorePopup(e.x+16,e.y-8,`+${pts}`,'#ff8800');
+                registerKill(e.x+16,e.y);
+                checkBossEnemiesCleared();
+                return false;
             }
         }
         return f.y<650&&f.x>-300&&f.x<3600;
@@ -1895,9 +2278,56 @@ function updatePowerUps() {
 
 function checkFlag() {
     const lvl=levels[gState.currentLevel-1];
-    if(!lvl||!lvl.flag||(boss&&boss.active)) return;
+    if(!lvl||!lvl.flag) return;
+    // On boss levels: boss must be defeated AND all enemies cleared
+    if(lvl.isBossLevel) {
+        if(boss&&boss.active) return; // boss still alive
+        if(!boss||!boss.defeated) return; // boss not yet killed
+        const aliveEnemies = enemies.filter(e=>e.active).length;
+        if(aliveEnemies>0) return; // enemies still alive
+    } else {
+        if(boss&&boss.active) return;
+    }
     const f=lvl.flag;
     if(player.x+player.w>f.x&&player.x<f.x+14) completeLevel();
+}
+
+function checkBossEnemiesCleared() {
+    const lvl = levels[gState.currentLevel-1];
+    if(!lvl||!lvl.isBossLevel) return;
+    const bossDefeated = boss && boss.defeated;
+    const aliveEnemies = enemies.filter(e=>e.active).length;
+    updateBossBar();
+    if(bossDefeated && aliveEnemies===0) {
+        showBossPhaseMessage('🚩 FIELD CLEAR! REACH THE FLAG!');
+        screenShake(12,20);
+        spawnParticles(400,300,50,{color:'#00ff88',size:4,life:55});
+    } else if(bossDefeated && aliveEnemies>0) {
+        showBossPhaseMessage(`${aliveEnemies} ENEM${aliveEnemies>1?'IES':'Y'} LEFT!`);
+    }
+}
+
+function showBossPhaseMessage(msg) {
+    // Flash an in-world message above the player
+    const el = document.createElement('div');
+    el.style.cssText = `
+        position:absolute; left:50%; top:50%; transform:translate(-50%,-60%);
+        font-family:'Press Start 2P',monospace; font-size:13px;
+        color:#ffd700; text-shadow:2px 2px 0 #8B6914, 0 0 20px rgba(255,215,0,0.7);
+        z-index:85; pointer-events:none; text-align:center; line-height:1.8;
+        animation:bossPhaseAnim 2.8s ease forwards; white-space:nowrap;
+    `;
+    el.textContent = msg;
+    const style = document.createElement('style');
+    style.textContent = `@keyframes bossPhaseAnim {
+        0%   { opacity:0; transform:translate(-50%,-70%) scale(0.8); }
+        15%  { opacity:1; transform:translate(-50%,-60%) scale(1.05); }
+        70%  { opacity:1; transform:translate(-50%,-60%) scale(1); }
+        100% { opacity:0; transform:translate(-50%,-50%) scale(0.95); }
+    }`;
+    document.head.appendChild(style);
+    document.getElementById('gameContainer').appendChild(el);
+    setTimeout(() => { el.remove(); style.remove(); }, 2800);
 }
 
 function hitPlayer() {
@@ -1907,9 +2337,11 @@ function hitPlayer() {
     if(player.powerUp==='fire'){player.powerUp='big';player.fireTimer=0;}
     else if(player.powerUp==='big'){player.powerUp='small';player.h=32;player.y+=16;}
     else{loseLife();return;}
+    if(gState) gState.tookHit = true;
     player.invincible=true;
     player.invincibleTimer=130 + buff.invBonus;
-    screenShake(8,15);updateHUD();
+    screenShake(8,15); updateHUD();
+    triggerDamageFlash();
     // Skin-specific hit effects
     if(sid==='knight'||sid==='golden'){
         spawnParticles(player.x+16,player.y+player.h/2,20,{color:'#b0bec5',size:4,life:30});
@@ -1950,9 +2382,10 @@ function loseLife() {
             if(pMin===undefined){pMin=e.x-180;pMax=e.x+180;}
             return{...e,active:true,dir:1,vy:0,speed:e.type==='KOOPA'?1.2:1.5,pMin,pMax};
         });
-        boss=lvl.isBossLevel?{active:true,x:1500,y:460,w:90,h:90,health:8,maxHealth:8,fireCooldown:70,moveDir:1,moveSpeed:1.3}:{active:false};
+        boss=lvl.isBossLevel?{active:true,x:1500,y:460,w:90,h:90,health:8,maxHealth:8,fireCooldown:70,moveDir:1,moveSpeed:1.3,defeated:false}:{active:false};
         gState.cameraX=0; gState.levelComplete=false;
         document.getElementById('bossBar').style.display=lvl.isBossLevel?'block':'none';
+        document.getElementById('bossObjectives').style.display=lvl.isBossLevel?'block':'none';
         if(lvl.isBossLevel) updateBossBar();
         updateHUD();
         hideLCOverlay();
@@ -1971,6 +2404,20 @@ function shootFireball() {
 function completeLevel() {
     if(gState.levelComplete) return;
     gState.levelComplete=true; gState.score+=1000;
+
+    // Track flawless (no hits taken this level = invincibleTimer never triggered by hit)
+    if (!achStats) achStats = {};
+    if (!gState.tookHit) { achStats.flawlessLevel = true; } else { achStats.flawlessLevel = false; }
+
+    // Track boss kills
+    const lvl = levels[gState.currentLevel-1];
+    if (lvl && lvl.isBossLevel) {
+        achStats.totalBossKills = (achStats.totalBossKills||0)+1;
+    }
+
+    // Track total coins
+    achStats.totalCoins = (achStats.totalCoins||0) + gState.coins;
+    saveAchs(); checkAchievements();
 
     // Save best time
     const elapsed = Math.floor((Date.now() - levelStartTime) / 1000);
@@ -2305,11 +2752,20 @@ function drawPlayer() {
         ctx.fillStyle=f?'#bbb':sc.body+'cc';ctx.fillRect(rx+4,bY+bH*0.6,24,bH*0.4);
         // Shoes
         ctx.fillStyle=sc.shoe;ctx.fillRect(rx+2,ry+h-6,12,6);ctx.fillRect(rx+18,ry+h-6,12,6);
-        // Double-jump sparkle ring (show when airborne and DJ available)
-        if(!player.grounded && !player.doubleJumpUsed) {
+        // Double-jump sparkle ring
+        if(!player.grounded && !player.doubleJumpUsed && !player.wallSliding) {
             ctx.globalAlpha=0.35+Math.sin(frameCount*0.25)*0.2;
             ctx.strokeStyle='#88eeff';ctx.lineWidth=2;
             ctx.beginPath();ctx.arc(rx+16,ry+h/2,18,0,Math.PI*2);ctx.stroke();
+            ctx.globalAlpha=1;
+        }
+        // Wall-slide sparks
+        if(player.wallSliding) {
+            ctx.globalAlpha=0.6+Math.sin(frameCount*0.4)*0.3;
+            const wx = player.wallDir>0 ? rx+player.w : rx;
+            ctx.strokeStyle='#00e5ff'; ctx.lineWidth=2;
+            ctx.beginPath(); ctx.moveTo(wx, ry+h*0.2); ctx.lineTo(wx, ry+h*0.8); ctx.stroke();
+            if(frameCount%4===0) spawnParticles(wx, ry+h*0.5, 2, {color:'#00e5ff', size:2, life:10});
             ctx.globalAlpha=1;
         }
     }
@@ -2353,8 +2809,65 @@ function drawEnemies(){
     for(const e of enemies){
         if(!e.active)continue;
         const rx=e.x-gState.cameraX+shake.x,ry=e.y+shake.y;
-        if(rx<-60||rx>870)continue;
-        if(e.type==='GOOMBA'){
+        if(rx<-80||rx>900)continue;
+
+        if(e.type==='FLYER'){
+            // Cyan bat-like flyer
+            const wing=Math.sin(frameCount*0.25)*18;
+            ctx.fillStyle='#006064';
+            // wings
+            ctx.beginPath();ctx.ellipse(rx+4,ry+12,14,7,(-Math.PI/6)-wing*0.02,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.ellipse(rx+28,ry+12,14,7,(Math.PI/6)+wing*0.02,0,Math.PI*2);ctx.fill();
+            // body
+            const bg=ctx.createRadialGradient(rx+16,ry+16,3,rx+16,ry+16,14);
+            bg.addColorStop(0,'#00bcd4');bg.addColorStop(1,'#006064');
+            ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(rx+16,ry+16,12,10,0,0,Math.PI*2);ctx.fill();
+            // eyes
+            ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(rx+11,ry+13,4,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.arc(rx+21,ry+13,4,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#f00';ctx.beginPath();ctx.arc(rx+12,ry+13,2,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.arc(rx+22,ry+13,2,0,Math.PI*2);ctx.fill();
+            // glow
+            ctx.shadowColor='#00e5ff';ctx.shadowBlur=8;
+            ctx.strokeStyle='rgba(0,229,255,0.4)';ctx.lineWidth=1.5;
+            ctx.beginPath();ctx.ellipse(rx+16,ry+16,16,14,0,0,Math.PI*2);ctx.stroke();
+            ctx.shadowBlur=0;
+
+        } else if(e.type==='TANK'){
+            const cracked = (e.hp||2) < 2;
+            // shadow
+            ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.ellipse(rx+20,ry+42,22,8,0,0,Math.PI*2);ctx.fill();
+            // shell / body
+            const sg=ctx.createRadialGradient(rx+16,ry+18,4,rx+20,ry+20,22);
+            sg.addColorStop(0,cracked?'#8d6e63':'#546e7a');
+            sg.addColorStop(1,cracked?'#4e342e':'#263238');
+            ctx.fillStyle=sg;ctx.beginPath();ctx.ellipse(rx+20,ry+18,20,18,0,0,Math.PI*2);ctx.fill();
+            // shell plates
+            ctx.strokeStyle=cracked?'rgba(150,80,50,0.5)':'rgba(100,150,180,0.4)';ctx.lineWidth=1.5;
+            for(let i=0;i<3;i++){
+                ctx.beginPath();ctx.ellipse(rx+20,ry+18,20-i*5,18-i*5,0,0,Math.PI*2);ctx.stroke();
+            }
+            if(cracked){
+                // crack lines
+                ctx.strokeStyle='rgba(80,40,20,0.8)';ctx.lineWidth=2;
+                ctx.beginPath();ctx.moveTo(rx+12,ry+8);ctx.lineTo(rx+20,ry+20);ctx.lineTo(rx+28,ry+12);ctx.stroke();
+                ctx.beginPath();ctx.moveTo(rx+16,ry+20);ctx.lineTo(rx+10,ry+32);ctx.stroke();
+            }
+            // legs
+            const wo=Math.sin(frameCount*0.15)*4;
+            ctx.fillStyle='#37474f';
+            ctx.beginPath();ctx.ellipse(rx+8,ry+38+wo,9,6,0,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.ellipse(rx+32,ry+38-wo,9,6,0,0,Math.PI*2);ctx.fill();
+            // face
+            ctx.fillStyle='#b0bec5';ctx.beginPath();ctx.ellipse(rx+20,ry+14,10,8,0,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#000';ctx.fillRect(rx+14,ry+11,5,5);ctx.fillRect(rx+21,ry+11,5,5);
+            // HP pips
+            for(let i=0;i<(e.hp||2);i++){
+                ctx.fillStyle=i===0?'#ff5722':'#78909c';
+                ctx.fillRect(rx+14+i*8,ry-8,6,5);
+            }
+
+        } else if(e.type==='GOOMBA'){
             const g=ctx.createRadialGradient(rx+16,ry+16,4,rx+16,ry+20,20);g.addColorStop(0,'#a0522d');g.addColorStop(1,'#6d3016');
             ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(rx+16,ry+14,16,14,0,0,Math.PI*2);ctx.fill();
             const wo=Math.sin(frameCount*0.2)*3;ctx.fillStyle='#3e1a0a';
@@ -2366,37 +2879,29 @@ function drawEnemies(){
             ctx.beginPath();ctx.moveTo(rx+5,ry+8);ctx.lineTo(rx+14,ry+10);ctx.stroke();
             ctx.beginPath();ctx.moveTo(rx+18,ry+10);ctx.lineTo(rx+27,ry+8);ctx.stroke();
         } else if(e.type==='RANGER'){
-            // Purple hooded ranger enemy with glowing eyes
             const pulse=1+Math.sin(frameCount*0.12)*0.15;
-            // body
             ctx.fillStyle='#4a0080';ctx.beginPath();ctx.ellipse(rx+16,ry+20,14,18,0,0,Math.PI*2);ctx.fill();
-            // cloak
             ctx.fillStyle='#2d004d';
             ctx.beginPath();ctx.moveTo(rx+2,ry+16);ctx.lineTo(rx-4,ry+36);ctx.lineTo(rx+36,ry+36);ctx.lineTo(rx+30,ry+16);ctx.closePath();ctx.fill();
-            // hood
             ctx.fillStyle='#3a0066';ctx.beginPath();ctx.arc(rx+16,ry+10,13,Math.PI,0);ctx.fill();ctx.fillRect(rx+3,ry+10,26,6);
-            // face
             ctx.fillStyle='#1a0033';ctx.beginPath();ctx.ellipse(rx+16,ry+14,9,8,0,0,Math.PI*2);ctx.fill();
-            // glowing eyes
             const ec=`rgba(255,100,0,${0.8+Math.sin(frameCount*0.15)*0.2})`;
             ctx.fillStyle=ec;ctx.shadowColor='#ff6600';ctx.shadowBlur=8*pulse;
             ctx.beginPath();ctx.arc(rx+11,ry+12,3.5,0,Math.PI*2);ctx.fill();
             ctx.beginPath();ctx.arc(rx+21,ry+12,3.5,0,Math.PI*2);ctx.fill();
             ctx.shadowBlur=0;
-            // staff
             ctx.strokeStyle='#8b4513';ctx.lineWidth=3;
             ctx.beginPath();ctx.moveTo(rx+(e.dir>0?28:4),ry+8);ctx.lineTo(rx+(e.dir>0?34:2),ry+36);ctx.stroke();
-            // orb on staff
             const oh=frameCount*0.1;ctx.fillStyle=`hsl(${(oh*30)%360},100%,55%)`;
             ctx.shadowColor=`hsl(${(oh*30)%360},100%,60%)`;ctx.shadowBlur=12;
             ctx.beginPath();ctx.arc(rx+(e.dir>0?28:4),ry+8,6,0,Math.PI*2);ctx.fill();
             ctx.shadowBlur=0;
-            // fire indicator when about to shoot
             if((e.fireCooldown||0)<25&&(e.fireCooldown||0)>0){
                 ctx.fillStyle=`rgba(255,80,0,${0.5+Math.sin(frameCount*0.4)*0.3})`;
                 ctx.beginPath();ctx.arc(rx+16,ry+16,20,0,Math.PI*2);ctx.fill();
             }
         } else {
+            // KOOPA
             ctx.fillStyle='#2e7d32';ctx.beginPath();ctx.ellipse(rx+16,ry+18,15,16,0,0,Math.PI*2);ctx.fill();
             ctx.strokeStyle='#1b5e20';ctx.lineWidth=1.5;
             ctx.beginPath();ctx.moveTo(rx+8,ry+10);ctx.lineTo(rx+24,ry+26);ctx.stroke();
@@ -2404,9 +2909,9 @@ function drawEnemies(){
             const hx=e.dir>0?rx+25:rx+7;
             ctx.fillStyle='#c8e6c9';ctx.beginPath();ctx.ellipse(hx,ry+8,9,8,0,0,Math.PI*2);ctx.fill();
             ctx.fillStyle='#000';ctx.beginPath();ctx.arc(hx+(e.dir>0?2:-2),ry+6,2.5,0,Math.PI*2);ctx.fill();
-            const wo=Math.sin(frameCount*0.2)*3;ctx.fillStyle='#f9a825';
-            ctx.beginPath();ctx.ellipse(rx+8,ry+33+wo,7,4,0,0,Math.PI*2);ctx.fill();
-            ctx.beginPath();ctx.ellipse(rx+24,ry+33-wo,7,4,0,0,Math.PI*2);ctx.fill();
+            const wo2=Math.sin(frameCount*0.2)*3;ctx.fillStyle='#f9a825';
+            ctx.beginPath();ctx.ellipse(rx+8,ry+33+wo2,7,4,0,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.ellipse(rx+24,ry+33-wo2,7,4,0,0,Math.PI*2);ctx.fill();
         }
     }
 }
@@ -2785,12 +3290,13 @@ function drawTimeAttack() {
 // ============================================================
 function gameLoop(){
     if(!gState) return;
-    frameCount++;updateShake();updateDayNight();
+    if(gamePaused) { gameLoopId=requestAnimationFrame(gameLoop); return; }
+    frameCount++;updateShake();updateDayNight();updateDamageFlash();
     if(!gState.over&&!gState.levelComplete){
         updateMovingPlatforms();
         updatePlayer();updateEnemies();updateCoins();updatePowerUps();updateFireballs();
         updateSpikes();updateTurrets();updateRangerFireballs();
-        updateScorePopups();
+        updateSecretStars();updateCombo();updateScorePopups();
         if(boss&&boss.active) updateBoss();
         checkFlag();updateParticles();
         if(frameCount%30===0) updateHUD();
@@ -2802,8 +3308,9 @@ function gameLoop(){
     drawPlatforms();drawSpikes();drawTurrets();
     drawCoins();drawPowerUps();drawEnemies();drawFireballs();drawRangerFireballs();
     if(boss&&boss.active) drawBoss();
+    drawSecretStars();
     drawFlag();drawPlayer();drawParticles();
-    drawScorePopups();
+    drawScorePopups();drawCombo();
     drawTimeAttack();
     gameLoopId=requestAnimationFrame(gameLoop);
 }
