@@ -351,41 +351,65 @@
             display:none; flex-direction:column; align-items:center; justify-content:flex-start;
             overflow:hidden;
         }
-        .sk-bg { position:absolute; inset:0; background:linear-gradient(160deg,#05051a 0%,#120820 100%); }
-        .sk-header { position:relative; z-index:2; text-align:center; padding:22px 0 12px; width:100%; border-bottom:1px solid rgba(255,215,0,0.2); }
-        .sk-title { font-size:18px; color:var(--gold); text-shadow:3px 3px 0 #8B6914, 0 0 20px rgba(255,215,0,0.4); letter-spacing:4px; }
-        .sk-subtitle { font-family:'VT323',monospace; font-size:15px; color:rgba(255,255,255,0.35); letter-spacing:3px; margin-top:4px; }
-        .sk-grid { position:relative; z-index:2; display:grid; grid-template-columns:repeat(4,1fr); gap:14px; padding:18px 28px; width:100%; }
-        .sk-card {
-            border-radius:4px; border:2px solid rgba(255,215,0,0.2);
-            background:rgba(255,255,255,0.04); padding:14px 8px 10px;
-            display:flex; flex-direction:column; align-items:center; gap:8px;
-            cursor:pointer; transition:all 0.15s; position:relative; overflow:hidden;
+        .sk-bg {
+            position:absolute; inset:0;
+            background:linear-gradient(160deg,#05051a 0%,#0d0520 50%,#120820 100%);
         }
-        .sk-card.active { border-color:var(--gold); background:rgba(255,215,0,0.1); box-shadow:0 0 20px rgba(255,215,0,0.3); }
-        .sk-card.locked { opacity:0.4; cursor:not-allowed; }
-        .sk-card:not(.locked):hover { transform:translateY(-3px); border-color:rgba(255,215,0,0.7); box-shadow:0 0 14px rgba(255,215,0,0.2); }
-        .sk-canvas { width:52px; height:60px; image-rendering:pixelated; }
-        .sk-name { font-size:7px; color:white; letter-spacing:1px; text-align:center; }
-        .sk-lock { font-size:10px; color:rgba(255,255,255,0.3); }
-        .sk-unlock-label { font-size:6px; color:rgba(255,215,0,0.5); letter-spacing:1px; }
-        .sk-active-badge { position:absolute; top:4px; right:4px; font-size:9px; }
+        .sk-bg::before {
+            content:''; position:absolute; inset:0;
+            background:radial-gradient(ellipse at 50% 100%, rgba(255,215,0,0.04) 0%, transparent 60%);
+        }
+        .sk-header { position:relative; z-index:2; text-align:center; padding:18px 0 10px; width:100%; border-bottom:1px solid rgba(255,215,0,0.2); }
+        .sk-title { font-size:18px; color:var(--gold); text-shadow:3px 3px 0 #8B6914, 0 0 20px rgba(255,215,0,0.4); letter-spacing:4px; }
+        .sk-subtitle { font-family:'VT323',monospace; font-size:14px; color:rgba(255,255,255,0.3); letter-spacing:3px; margin-top:3px; }
+        .sk-grid {
+            position:relative; z-index:2;
+            display:grid; grid-template-columns:repeat(4,1fr);
+            gap:12px; padding:14px 22px; width:100%;
+        }
+        .sk-card {
+            border-radius:4px; border:2px solid rgba(255,215,0,0.15);
+            background:rgba(255,255,255,0.03); padding:12px 8px 10px;
+            display:flex; flex-direction:column; align-items:center; gap:6px;
+            cursor:pointer; transition:all 0.15s; position:relative; overflow:hidden;
+            min-height:140px;
+        }
+        .sk-card::before {
+            content:''; position:absolute; inset:0;
+            background:linear-gradient(to bottom, rgba(255,255,255,0.02), transparent);
+            pointer-events:none;
+        }
+        .sk-card.active {
+            border-color:var(--gold); background:rgba(255,215,0,0.08);
+            box-shadow:0 0 18px rgba(255,215,0,0.25), inset 0 0 12px rgba(255,215,0,0.05);
+        }
+        .sk-card.locked { opacity:0.35; cursor:not-allowed; }
+        .sk-card:not(.locked):hover {
+            transform:translateY(-3px); border-color:rgba(255,215,0,0.6);
+            box-shadow:0 6px 20px rgba(0,0,0,0.4), 0 0 12px rgba(255,215,0,0.15);
+        }
+        .sk-canvas { width:44px; height:52px; image-rendering:pixelated; }
+        .sk-name { font-size:7px; color:white; letter-spacing:1px; text-align:center; font-family:'Press Start 2P',monospace; }
+        .sk-buff-desc { font-size:5.5px; color:rgba(0,255,140,0.65); letter-spacing:0.3px; text-align:center; line-height:1.7; font-family:'Press Start 2P',monospace; padding:0 2px; }
+        .sk-lock { font-size:14px; color:rgba(255,255,255,0.25); }
+        .sk-unlock-label { font-size:5.5px; color:rgba(255,215,0,0.4); letter-spacing:1px; text-align:center; font-family:'Press Start 2P',monospace; }
+        .sk-active-badge { position:absolute; top:5px; right:6px; font-size:10px; color:var(--gold); text-shadow:0 0 8px var(--gold); }
         /* ===== TIME ATTACK TOGGLE ===== */
-        .ta-row { position:relative; z-index:2; display:flex; align-items:center; gap:16px; padding:10px 28px; }
-        .ta-label { font-size:10px; color:rgba(255,255,255,0.6); letter-spacing:2px; }
+        .ta-row { position:relative; z-index:2; display:flex; align-items:center; gap:14px; padding:8px 22px; }
+        .ta-label { font-size:9px; color:rgba(255,255,255,0.55); letter-spacing:2px; font-family:'Press Start 2P',monospace; }
         .ta-toggle {
             width:52px; height:26px; border-radius:13px; cursor:pointer;
-            border:2px solid rgba(255,215,0,0.4); background:rgba(255,255,255,0.05);
-            position:relative; transition:background 0.2s, border-color 0.2s;
+            border:2px solid rgba(255,215,0,0.35); background:rgba(255,255,255,0.05);
+            position:relative; transition:background 0.2s, border-color 0.2s; flex-shrink:0;
         }
-        .ta-toggle.on { background:rgba(255,215,0,0.25); border-color:var(--gold); }
+        .ta-toggle.on { background:rgba(255,215,0,0.2); border-color:var(--gold); }
         .ta-knob {
             position:absolute; top:2px; left:2px; width:18px; height:18px;
-            border-radius:50%; background:#666; transition:transform 0.2s, background 0.2s;
+            border-radius:50%; background:#555; transition:transform 0.2s, background 0.2s;
         }
-        .ta-toggle.on .ta-knob { transform:translateX(26px); background:var(--gold); }
-        .ta-desc { font-size:7px; color:rgba(255,255,255,0.3); letter-spacing:1px; }
-        .sk-footer { position:relative; z-index:2; display:flex; gap:14px; align-items:center; padding:8px 0 14px; }
+        .ta-toggle.on .ta-knob { transform:translateX(26px); background:var(--gold); box-shadow:0 0 8px rgba(255,215,0,0.5); }
+        .ta-desc { font-size:6px; color:rgba(255,255,255,0.25); letter-spacing:1px; font-family:'Press Start 2P',monospace; }
+        .sk-footer { position:relative; z-index:2; display:flex; gap:14px; align-items:center; padding:6px 0 12px; }
     </style>
 </head>
 <body>
@@ -424,7 +448,7 @@
     <button class="menu-btn" onclick="showLevelSelect()">▶ PLAY</button>
     <button class="menu-btn" onclick="showSkinScreen()">👕 SKINS</button>
     <button class="menu-btn" onclick="showSettingsMenu()">⚙ SETTINGS</button>
-    <div class="menu-credit">TYPE "lord67" IN-GAME FOR GORDON'S AURA · TYPE "hacker67" ANYWHERE TO UNLOCK ALL</div>
+    <div class="menu-credit">CLEAR WORLDS TO UNLOCK NEW SKINS · FIRE KEY: K</div>
     <div id="settingsPanel">
         <button class="close-x" onclick="hideSettings()">✕</button>
         <div class="settings-title">⚙ SETTINGS</div>
@@ -505,6 +529,7 @@
         <div class="hud-item"><span class="hud-label">COINS</span><span class="hud-val gold" id="coinsDisp">0</span></div>
         <div class="hud-item"><span class="hud-label">TRIES</span><span class="hud-val red" id="livesDisp">1</span></div>
         <div class="hud-item" style="margin-left:auto;"><span class="hud-label">POWER</span><span class="hud-val green" id="powerDisp">SMALL</span></div>
+        <div class="hud-item" style="margin-left:10px;"><span class="hud-label">SKIN</span><span class="hud-val" id="skinDisp" style="font-size:9px;color:#aaa;">ADVENTURER</span></div>
         <button id="menuBackBtn" onclick="confirmBackToMenu()" style="margin-left:18px;background:transparent;border:1px solid rgba(255,215,0,0.45);color:rgba(255,215,0,0.85);font-family:'Press Start 2P',monospace;font-size:7px;letter-spacing:1px;padding:5px 10px;border-radius:2px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,215,0,0.15)'" onmouseout="this.style.background='transparent'">⬅ MENU</button>
     </div>
     <div id="bossBar"><div class="boss-name">⚠ BOWSER ⚠</div><div class="boss-bar-bg"><div id="bossHealth" style="width:100%;"></div></div></div>
@@ -531,17 +556,47 @@ let fireKey = 'K';
 let modalActionStr = '';
 
 // ── SKIN SYSTEM ──────────────────────────────────────────────
+// Each skin has: colors, unlockLevel, buff stats
+// buffs: speed multiplier, jumpForce multiplier, fireCooldown divisor, invincibleBonus frames, scoreBonus multiplier
 const SKINS = [
-    { id:'classic',  name:'GORDON',      unlockLevel:1,  colors:{hat:'#e53935',body:'#1976d2',skin:'#ffe0b2',shoe:'#3e2723'} },
-    { id:'ninja',    name:'NINJA',        unlockLevel:5,  colors:{hat:'#222',   body:'#1a1a1a',skin:'#ffe0b2',shoe:'#111'} },
-    { id:'knight',   name:'KNIGHT',       unlockLevel:10, colors:{hat:'#aaa',   body:'#888',   skin:'#ffe0b2',shoe:'#555'} },
-    { id:'wizard',   name:'WIZARD',       unlockLevel:15, colors:{hat:'#6a0dad',body:'#4a0080',skin:'#ffe0b2',shoe:'#2d0050'} },
-    { id:'robot',    name:'ROBO-GORDON',  unlockLevel:20, colors:{hat:'#00bcd4',body:'#0097a7',skin:'#b0bec5',shoe:'#455a64'} },
-    { id:'inferno',  name:'INFERNO',      unlockLevel:25, colors:{hat:'#ff6f00',body:'#e65100',skin:'#ffccbc',shoe:'#bf360c'} },
-    { id:'golden',   name:'GOLD GORDON',  unlockLevel:30, colors:{hat:'#ffd700',body:'#ffb300',skin:'#fff9c4',shoe:'#f57f17'} },
+    { id:'classic', name:'ADVENTURER', unlockLevel:1,
+      desc:'BALANCED STATS', tag:'DEFAULT',
+      colors:{hat:'#e53935',body:'#1976d2',skin:'#ffe0b2',shoe:'#3e2723'},
+      buff:{speed:1.0, jump:1.0, fireCooldown:1.0, invBonus:0, scoreBonus:1.0} },
+
+    { id:'ninja',   name:'SHADOW', unlockLevel:5,
+      desc:'+30% SPEED  SILENT STEPS', tag:'WORLD 1',
+      colors:{hat:'#1a1a2e',body:'#16213e',skin:'#c8a882',shoe:'#0f0e17'},
+      buff:{speed:1.3, jump:1.05, fireCooldown:1.0, invBonus:0, scoreBonus:1.0} },
+
+    { id:'knight',  name:'IRONCLAD', unlockLevel:10,
+      desc:'+60 INVINCIBILITY FRAMES', tag:'WORLD 2',
+      colors:{hat:'#b0bec5',body:'#78909c',skin:'#ffe0b2',shoe:'#37474f'},
+      buff:{speed:0.9, jump:1.0, fireCooldown:1.0, invBonus:60, scoreBonus:1.0} },
+
+    { id:'wizard',  name:'ARCANE', unlockLevel:15,
+      desc:'2x FIRE RATE  +20% JUMP', tag:'WORLD 3',
+      colors:{hat:'#6a0dad',body:'#4a0080',skin:'#e8d5c4',shoe:'#2d0050'},
+      buff:{speed:1.0, jump:1.2, fireCooldown:2.0, invBonus:0, scoreBonus:1.0} },
+
+    { id:'robot',   name:'UNIT-7', unlockLevel:20,
+      desc:'+20% SCORE  METAL SKIN', tag:'WORLD 4',
+      colors:{hat:'#00bcd4',body:'#0097a7',skin:'#b0bec5',shoe:'#455a64'},
+      buff:{speed:1.0, jump:1.0, fireCooldown:1.0, invBonus:0, scoreBonus:1.2} },
+
+    { id:'inferno', name:'BLAZE', unlockLevel:25,
+      desc:'3x FIRE RATE  FIRE FOREVER', tag:'WORLD 5',
+      colors:{hat:'#ff6f00',body:'#e65100',skin:'#ffccbc',shoe:'#bf360c'},
+      buff:{speed:1.1, jump:1.0, fireCooldown:3.0, invBonus:0, scoreBonus:1.0} },
+
+    { id:'golden',  name:'GILDED', unlockLevel:30,
+      desc:'ALL BUFFS  MAXIMUM GLORY', tag:'ALL CLEAR',
+      colors:{hat:'#ffd700',body:'#ffb300',skin:'#fff9c4',shoe:'#f57f17'},
+      buff:{speed:1.15, jump:1.15, fireCooldown:1.8, invBonus:40, scoreBonus:1.5} },
 ];
 let activeSkin = 0;
 function getSkinColors() { return SKINS[activeSkin].colors; }
+function getSkinBuff()   { return SKINS[activeSkin].buff; }
 function isSkinUnlocked(idx) {
     return levelProgress.highestUnlocked > SKINS[idx].unlockLevel || SKINS[idx].unlockLevel === 1;
 }
@@ -624,8 +679,9 @@ function buildSkinGrid() {
     grid.innerHTML = '';
     SKINS.forEach((skin, idx) => {
         const unlocked = isSkinUnlocked(idx);
+        const isActive = idx === activeSkin;
         const card = document.createElement('div');
-        card.className = 'sk-card' + (idx === activeSkin ? ' active' : '') + (unlocked ? '' : ' locked');
+        card.className = 'sk-card' + (isActive ? ' active' : '') + (unlocked ? '' : ' locked');
 
         // Mini canvas preview
         const cvs = document.createElement('canvas');
@@ -634,26 +690,36 @@ function buildSkinGrid() {
         drawSkinPreview(cvs, skin.colors, unlocked);
         card.appendChild(cvs);
 
+        // Name
         const nameEl = document.createElement('div');
         nameEl.className = 'sk-name';
         nameEl.textContent = skin.name;
         card.appendChild(nameEl);
 
-        if (!unlocked) {
+        if (unlocked) {
+            // Buff description
+            const descEl = document.createElement('div');
+            descEl.className = 'sk-buff-desc';
+            descEl.textContent = skin.desc;
+            card.appendChild(descEl);
+        } else {
+            // Lock + unlock hint
             const lockEl = document.createElement('div');
             lockEl.className = 'sk-lock';
             lockEl.textContent = '🔒';
             card.appendChild(lockEl);
             const ulEl = document.createElement('div');
             ulEl.className = 'sk-unlock-label';
-            ulEl.textContent = `LVL ${skin.unlockLevel}`;
+            ulEl.textContent = `CLEAR ${skin.tag}`;
             card.appendChild(ulEl);
         }
 
-        if (idx === activeSkin) {
+        // Active checkmark badge
+        if (isActive) {
             const badge = document.createElement('div');
             badge.className = 'sk-active-badge';
             badge.textContent = '✓';
+            badge.style.color = 'var(--gold)';
             card.appendChild(badge);
         }
 
@@ -852,12 +918,13 @@ document.addEventListener('keydown', e => {
     if (!player || !gState || gState.over || gState.levelComplete) return;
 
     if ((e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp')) {
+        const jf = JUMP_FORCE * getSkinBuff().jump;
         if (player.grounded) {
-            player.velY = JUMP_FORCE; player.grounded = false; player.doubleJumpUsed = false;
+            player.velY = jf; player.grounded = false; player.doubleJumpUsed = false;
             screenShake(3, 8);
             spawnParticles(player.x+16, player.y+player.h, 4, {color:'rgba(255,255,255,0.4)', size:2, life:12});
         } else if (!player.doubleJumpUsed) {
-            player.velY = JUMP_FORCE * 0.85; player.doubleJumpUsed = true;
+            player.velY = jf * 0.85; player.doubleJumpUsed = true;
             spawnParticles(player.x+16, player.y+player.h/2, 10, {color:'#88eeff', size:3, life:18});
             screenShake(2, 5);
         }
@@ -1642,8 +1709,10 @@ function activateRainbow() {
 function updatePlayer() {
     if (gState.over || gState.levelComplete) return;
     player.velX = 0;
-    if (keys['ArrowLeft']||keys['KeyA'])       { player.velX=-MOVE_SPEED; player.facing=-1; }
-    else if (keys['ArrowRight']||keys['KeyD']) { player.velX= MOVE_SPEED; player.facing= 1; }
+    const buff = getSkinBuff();
+    const spd = MOVE_SPEED * buff.speed;
+    if (keys['ArrowLeft']||keys['KeyA'])       { player.velX=-spd; player.facing=-1; }
+    else if (keys['ArrowRight']||keys['KeyD']) { player.velX= spd; player.facing= 1; }
 
     if (player.velX!==0) { player.walkTimer++; if(player.walkTimer>8){player.walkTimer=0;player.walkFrame=(player.walkFrame+1)%4;} } else { player.walkFrame=0; }
 
@@ -1663,9 +1732,13 @@ function updatePlayer() {
     for (const mp of movingPlatforms) {
         if (player.x+player.w>mp.x && player.x<mp.x+mp.w) {
             const bot = player.y+player.h;
-            if (bot>=mp.y && bot<=mp.y+30 && player.velY>=0) {
-                player.y=mp.y-player.h; player.velY=0; player.grounded=true;
-                player.x+=mp.vx; // carry player with platform
+            if (bot>=mp.y && bot<=mp.y+24 && player.velY>=0) {
+                player.y = mp.y - player.h;
+                player.velY = 0;
+                player.grounded = true;
+                // Carry: apply the platform's true per-frame displacement
+                player.x += mp.vx;
+                player.y += mp.vy;
             }
         }
     }
@@ -1674,9 +1747,27 @@ function updatePlayer() {
     if (player.y > 700) loseLife();
 
     if (player.invincible) { player.invincibleTimer--; if(player.invincibleTimer<=0){player.invincible=false;player.invincibleTimer=0;} }
-    if (player.powerUp==='fire') { player.fireTimer--; if(player.fireTimer<=0){player.powerUp='big';player.fireTimer=0;} }
+    if (player.powerUp==='fire') {
+        player.fireTimer--;
+        // Blaze & Gilded: fire never expires
+        const b = getSkinBuff();
+        if (b.fireCooldown >= 3.0) player.fireTimer = Math.max(player.fireTimer, 60);
+        if(player.fireTimer<=0){player.powerUp='big';player.fireTimer=0;}
+    }
     if (player.isRainbow) { player.rainbowTimer--; if(player.rainbowTimer<=0){player.isRainbow=false;player.rainbowTimer=0;} }
     if (player.fireCooldown>0) player.fireCooldown--;
+
+    // Skin-specific particle trails
+    if (player.velX !== 0 || player.velY !== 0) {
+        const sid = SKINS[activeSkin].id;
+        if (sid === 'ninja' && frameCount % 5 === 0) {
+            spawnParticles(player.x+16, player.y+player.h/2, 2, {color:'rgba(0,0,20,0.7)', size:3, life:14});
+        } else if (sid === 'golden' && frameCount % 4 === 0) {
+            spawnParticles(player.x+16, player.y+player.h, 2, {color:'#ffd700', size:2, life:18});
+        } else if (sid === 'inferno' && player.velX !== 0 && frameCount % 3 === 0) {
+            spawnParticles(player.x + (player.facing>0?0:player.w), player.y+player.h*0.6, 2, {color:'#ff4400', size:2, life:12});
+        }
+    }
 
     gState.cameraX = Math.max(0, player.x-350);
     document.getElementById('playerX').textContent = Math.floor(player.x);
@@ -1706,12 +1797,17 @@ function updateEnemies() {
 
         if (!player.invincible && player.x+player.w>e.x+4 && player.x<e.x+28 && player.y+player.h>e.y+4 && player.y<e.y+28) {
             if (player.velY>1 && player.y+player.h<e.y+16) {
-                e.active=false; player.velY=-9; gState.score+=200; updateHUD();
+                e.active=false; player.velY=-9;
+                const pts = Math.round(200 * getSkinBuff().scoreBonus);
+                gState.score+=pts; updateHUD();
                 screenShake(4,10); spawnParticles(e.x+16,e.y,10,{color:'#bbb',size:2,life:20});
-                addScorePopup(e.x+16,e.y-8,'+200','#ffffff');
+                addScorePopup(e.x+16,e.y-8,`+${pts}`,'#ffffff');
             } else if (player.isRainbow) {
-                e.active=false; gState.score+=200; updateHUD();
+                e.active=false;
+                const pts = Math.round(200 * getSkinBuff().scoreBonus);
+                gState.score+=pts; updateHUD();
                 spawnParticles(e.x+16,e.y,12,{color:'#ff00ff',size:3,life:25});
+                addScorePopup(e.x+16,e.y-8,`+${pts}`,'#ff88ff');
             } else { hitPlayer(); }
         }
     }
@@ -1772,7 +1868,16 @@ function updateFireballs() {
 }
 
 function updateCoins() {
-    for(const c of coinObjs){if(c.collected)continue;if(Math.abs(player.x+16-c.x)<22&&Math.abs(player.y+player.h/2-c.y)<22){c.collected=true;gState.coins++;gState.score+=100;updateHUD();spawnParticles(c.x,c.y,8,{color:'#FFD700',size:2,life:25});addScorePopup(c.x,c.y-10,'+100','#FFD700');}}
+    const mult = getSkinBuff().scoreBonus;
+    for(const c of coinObjs){
+        if(c.collected)continue;
+        if(Math.abs(player.x+16-c.x)<22&&Math.abs(player.y+player.h/2-c.y)<22){
+            c.collected=true; gState.coins++;
+            const pts=Math.round(100*mult); gState.score+=pts; updateHUD();
+            spawnParticles(c.x,c.y,8,{color:'#FFD700',size:2,life:25});
+            addScorePopup(c.x,c.y-10,`+${pts}`,'#FFD700');
+        }
+    }
 }
 
 function updatePowerUps() {
@@ -1797,10 +1902,23 @@ function checkFlag() {
 
 function hitPlayer() {
     if(player.invincible||player.isRainbow) return;
+    const buff = getSkinBuff();
+    const sid = SKINS[activeSkin].id;
     if(player.powerUp==='fire'){player.powerUp='big';player.fireTimer=0;}
     else if(player.powerUp==='big'){player.powerUp='small';player.h=32;player.y+=16;}
     else{loseLife();return;}
-    player.invincible=true;player.invincibleTimer=130;screenShake(8,15);updateHUD();
+    player.invincible=true;
+    player.invincibleTimer=130 + buff.invBonus;
+    screenShake(8,15);updateHUD();
+    // Skin-specific hit effects
+    if(sid==='knight'||sid==='golden'){
+        spawnParticles(player.x+16,player.y+player.h/2,20,{color:'#b0bec5',size:4,life:30});
+        screenShake(12,18);
+    } else if(sid==='robot'){
+        spawnParticles(player.x+16,player.y+player.h/2,16,{color:'#00e5ff',size:3,life:25});
+    } else if(sid==='inferno'){
+        spawnParticles(player.x+16,player.y+player.h/2,14,{color:'#ff4400',size:3,life:22});
+    }
 }
 
 function loseLife() {
@@ -1843,7 +1961,8 @@ function loseLife() {
 
 function shootFireball() {
     if(player.fireCooldown>0) return;
-    player.fireCooldown=28;
+    const buff = getSkinBuff();
+    player.fireCooldown = Math.max(6, Math.floor(28 / buff.fireCooldown));
     const sx=player.facing>0?player.x+player.w+2:player.x-10;
     fireballs.push({x:sx,y:player.y+player.h*0.5,vx:player.facing*9,vy:-2,r:8});
     spawnParticles(sx,player.y+player.h*0.5,6,{color:'#ff6600',size:2,life:15});
@@ -1893,8 +2012,13 @@ function updateHUD() {
     document.getElementById('coinsDisp').textContent=gState.coins;
     document.getElementById('livesDisp').textContent=gState.tries||1;
     document.getElementById('powerDisp').textContent=player.powerUp==='fire'?'FIRE':player.powerUp==='big'?'BIG':'SMALL';
+    const skinEl=document.getElementById('skinDisp');
+    if(skinEl){ skinEl.textContent=SKINS[activeSkin].name; skinEl.style.color=SKINS[activeSkin].colors.hat; }
     let lines=[];
-    if(player.powerUp==='fire'&&player.fireTimer>0) lines.push(`<span class="fire-bar">🔥 FIRE: ${Math.ceil(player.fireTimer/60)}s</span>`);
+    if(player.powerUp==='fire'&&player.fireTimer>0){
+        const isBlazeInfinite = getSkinBuff().fireCooldown>=3.0;
+        lines.push(`<span class="fire-bar">🔥 FIRE: ${isBlazeInfinite?'∞':Math.ceil(player.fireTimer/60)+'s'}</span>`);
+    }
     if(player.isRainbow) lines.push(`<span class="rainbow-bar">🌈 AURA: ${Math.ceil(player.rainbowTimer/60)}s</span>`);
     const pb=document.getElementById('powerupBar');pb.innerHTML=lines.join('<br>');pb.style.display=lines.length?'block':'none';
 }
@@ -2530,16 +2654,18 @@ function generateMovingPlatforms(lvl, levelNum) {
 
 function updateMovingPlatforms() {
     for (const mp of movingPlatforms) {
+        const prevX = mp.x, prevY = mp.y;
         mp.t += 0.02;
         if (mp.horizontal) {
-            mp.vx = Math.cos(mp.t) * mp.speed;
             mp.x = mp.baseX + Math.sin(mp.t) * mp.range;
-            mp.vy = 0;
+            mp.y = mp.baseY;
         } else {
-            mp.vy = Math.sin(mp.t) * mp.speed;
+            mp.x = mp.baseX;
             mp.y = mp.baseY + Math.sin(mp.t) * mp.range * 0.5;
-            mp.vx = 0;
         }
+        // Store true per-frame delta for player carry
+        mp.vx = mp.x - prevX;
+        mp.vy = mp.y - prevY;
     }
 }
 
