@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gordon's Quest</title>
+    <link rel="stylesheet" href="gate.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== GORDON'S GATE ===== -->
+<div id="gg-gate">
+  <div class="gg-content">
+    <div class="gg-skull">💀</div>
+    <div class="gg-title">ACCESS RESTRICTED</div>
+    <div class="gg-subtitle">[ GORDON'S MAINFRAME v2.0 ]</div>
+    <div class="gg-box" id="gg-box">
+      <div class="gg-line">SYSTEM: INITIALISING SECURITY PROTOCOL...</div>
+      <div class="gg-line bright">STATUS: AUTHENTICATION REQUIRED</div>
+      <div class="gg-line">CLEARANCE LEVEL: CLASSIFIED</div>
+      <div class="gg-row">
+        <span class="gg-prompt">ROOT@GORDON:~$</span>
+        <input type="password" id="gg-input" autocomplete="off" spellcheck="false" placeholder="ENTER ACCESS CODE" maxlength="20" />
+        <button id="gg-btn">ENTER ↵</button>
+      </div>
+    </div>
+    <div id="gg-denied">⛔ ACCESS DENIED — INVALID CODE</div>
+    <div id="gg-granted">✅ ACCESS GRANTED — WELCOME BACK</div>
+    <div class="gg-hint">hint: you know the code</div>
+  </div>
+</div>
+
+<!-- MENU -->
+<div id="menuScreen" class="screen" style="display:flex;">
+    <div class="menu-bg"></div>
+    <div class="menu-stars" id="menuStars"></div>
+    <div class="menu-ground"></div>
+    <div class="menu-title-wrap">
+        <div class="menu-subtitle">SUPER MARIO</div>
+        <h1 class="menu-title">GORDON'S QUEST</h1>
+    </div>
+    <button class="menu-btn" onclick="showLevelSelect()">▶ PLAY</button>
+    <button class="menu-btn" onclick="showSkinScreen()">👕 SKINS</button>
+    <button class="menu-btn" onclick="showAchievements()">🏅 ACHIEVEMENTS</button>
+    <button class="menu-btn" onclick="showSettingsMenu()">⚙ SETTINGS</button>
+    <div class="menu-credit">CLEAR WORLDS TO UNLOCK NEW SKINS · FIRE KEY: K</div>
+    <div id="settingsPanel">
+        <button class="close-x" onclick="hideSettings()">✕</button>
+        <div class="settings-title">⚙ SETTINGS</div>
+        <div class="settings-row">
+            <span>FIRE / FLY KEY</span>
+            <input class="key-input" type="text" id="fireKeyInput" value="K" maxlength="1">
+        </div>
+        <button class="pixel-btn" style="width:100%;margin-top:18px;" onclick="saveSettings()">SAVE &amp; APPLY</button>
+    </div>
+</div>
+
+<!-- SKIN SELECT -->
+<div id="skinScreen" class="screen">
+    <div class="sk-bg"></div>
+    <div class="sk-header">
+        <div class="sk-title">👕 SKINS</div>
+        <div class="sk-subtitle">UNLOCK BY REACHING EACH WORLD</div>
+    </div>
+    <div class="sk-grid" id="skGrid"></div>
+    <div class="ta-row">
+        <span class="ta-label">⏱ TIME ATTACK</span>
+        <div class="ta-toggle" id="taToggle" onclick="toggleTimeAttack()"><div class="ta-knob"></div></div>
+        <span class="ta-desc">RACE THE CLOCK · SAVE YOUR BEST TIMES</span>
+    </div>
+    <div class="sk-footer">
+        <button class="ls-back-btn" onclick="showMenu()">◀ BACK</button>
+        <button class="pixel-btn" onclick="showLevelSelect()" style="font-size:9px;">▶ PLAY</button>
+    </div>
+</div>
+
+<!-- ACHIEVEMENTS -->
+<div id="achScreen" class="screen">
+    <div class="ach-bg"></div>
+    <div class="ach-header">
+        <div class="ach-title">🏅 ACHIEVEMENTS</div>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+    <div class="ach-footer">
+        <button class="ls-back-btn" onclick="showMenu()">◀ BACK</button>
+    </div>
+</div>
+
+<!-- LEVEL SELECT -->
+<div id="levelSelectScreen" class="screen">
+    <div class="ls-bg"></div>
+    <div class="ls-header">
+        <div class="ls-title">SELECT LEVEL</div>
+        <div class="ls-subtitle">GORDON'S QUEST · 30 STAGES</div>
+    </div>
+    <div class="ls-grid" id="lsGrid"></div>
+    <div class="ls-footer">
+        <div class="ls-legend"><div class="ls-dot done"></div><span>COMPLETE</span></div>
+        <div class="ls-legend"><div class="ls-dot open"></div><span>UNLOCKED</span></div>
+        <div class="ls-legend"><div class="ls-dot lock"></div><span>LOCKED</span></div>
+        <button class="ls-back-btn" onclick="showMenu()">◀ BACK</button>
+    </div>
+    <!-- FIX: this tooltip container was referenced by showLevelPreview() in the JS
+         (getElementById('lvlpNum') etc.) but was never added to the HTML, so
+         hovering a level cell threw a TypeError. Added here. -->
+    <div id="lvlPreview">
+        <div class="lvlp-num" id="lvlpNum">LEVEL 1</div>
+        <div class="lvlp-name" id="lvlpName">—</div>
+        <div class="lvlp-stars" id="lvlpStars">☆☆☆</div>
+        <div class="lvlp-best" id="lvlpBest">BEST: --:--</div>
+        <div class="lvlp-type" id="lvlpType"></div>
+    </div>
+</div>
+
+<!-- GAME -->
+<div id="gameContainer" class="screen">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="damageFlash"></div>
+    <div id="achToast">
+        <div class="ach-toast-top">🏅 ACHIEVEMENT UNLOCKED</div>
+        <div class="ach-toast-name" id="achToastName">—</div>
+        <div class="ach-toast-desc" id="achToastDesc">—</div>
+    </div>
+    <!-- PAUSE OVERLAY -->
+    <div id="pauseOverlay">
+        <div class="pause-box">
+            <div class="pause-title">⏸ PAUSED</div>
+            <div class="pause-stat">LEVEL <span id="pauseLvl">1</span></div>
+            <div class="pause-stat">SCORE <span id="pauseScore">0</span></div>
+            <div class="pause-stat">SKIN <span id="pauseSkin">ADVENTURER</span></div>
+            <div class="pause-btns">
+                <button class="pause-btn" onclick="resumeGame()">▶ RESUME</button>
+                <button class="pause-btn" onclick="showSkinScreen()">👕 CHANGE SKIN</button>
+                <button class="pause-btn" onclick="restartLevel()">↻ RESTART LEVEL</button>
+                <button class="pause-btn danger" onclick="pauseToMenu()">⬅ MAIN MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEVEL COMPLETE OVERLAY -->
+    <div id="lcOverlay">
+        <canvas class="lc-confetti-canvas" id="lcConfetti" width="800" height="600"></canvas>
+        <div class="lc-rays"></div>
+        <div class="lc-vignette"></div>
+        <div class="lc-banner">
+            <div class="lc-banner-inner">
+                <div class="lc-big-text" id="lcBigText">LEVEL COMPLETE!</div>
+                <div class="lc-sub-text" id="lcSubText">SCORE: 0</div>
+                <div class="lc-stars-row" id="lcStarsRow">
+                    <span class="lc-star-item">⭐</span>
+                    <span class="lc-star-item">⭐</span>
+                    <span class="lc-star-item">⭐</span>
+                </div>
+            </div>
+        </div>
+        <div class="lc-tally" id="lcTally">
+            <div class="lc-tally-item"><div class="lc-tally-label">COINS</div><div class="lc-tally-val" id="lcTallyCoins">0</div></div>
+            <div class="lc-tally-item"><div class="lc-tally-label">LEVEL</div><div class="lc-tally-val" id="lcTallyLevel">1</div></div>
+            <div class="lc-tally-item"><div class="lc-tally-label">SCORE</div><div class="lc-tally-val" id="lcTallyScore">0</div></div>
+        </div>
+        <button id="lcContinueBtn" onclick="lcContinue()">▶ CONTINUE</button>
+    </div>
+
+    <div id="hud">
+        <div class="hud-item"><span class="hud-label">LEVEL</span><span class="hud-val" id="levelDisp">1</span></div>
+        <div class="hud-item"><span class="hud-label">SCORE</span><span class="hud-val gold" id="scoreDisp">0</span></div>
+        <div class="hud-item"><span class="hud-label">COINS</span><span class="hud-val gold" id="coinsDisp">0</span></div>
+        <div class="hud-item"><span class="hud-label">TRIES</span><span class="hud-val red" id="livesDisp">1</span></div>
+        <div class="hud-item" style="margin-left:auto;"><span class="hud-label">POWER</span><span class="hud-val green" id="powerDisp">SMALL</span></div>
+        <div class="hud-item" style="margin-left:10px;"><span class="hud-label">SKIN</span><span class="hud-val" id="skinDisp" style="font-size:9px;color:#aaa;">ADVENTURER</span></div>
+        <button id="menuBackBtn" onclick="confirmBackToMenu()" style="margin-left:18px;background:transparent;border:1px solid rgba(255,215,0,0.45);color:rgba(255,215,0,0.85);font-family:'Press Start 2P',monospace;font-size:7px;letter-spacing:1px;padding:5px 10px;border-radius:2px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,215,0,0.15)'" onmouseout="this.style.background='transparent'">⬅ MENU</button>
+    </div>
+    <div id="bossBar">
+        <div class="boss-name">⚠ BOWSER ⚠</div>
+        <div class="boss-bar-bg"><div id="bossHealth" style="width:100%;"></div></div>
+        <div id="bossObjectives" style="display:none;margin-top:6px;font-size:8px;font-family:'Press Start 2P',monospace;text-align:center;">
+            <span id="objBoss" style="color:#ff4444;">💀 BOSS: ALIVE</span>
+            &nbsp;&nbsp;
+            <span id="objEnemies" style="color:#ffaa00;">👾 ENEMIES: 0</span>
+            &nbsp;&nbsp;
+            <span id="objFlag" style="color:rgba(255,255,255,0.3);">🚩 FLAG: LOCKED</span>
+        </div>
+    </div>
+    <div id="powerupBar"></div>
+    <div id="flagInfo">GOAL X:<span id="flagX">0</span> &nbsp; YOU X:<span id="playerX">0</span></div>
+    <div id="modal" style="display:none;">
+        <div class="modal-box">
+            <div id="modalTitle">LEVEL COMPLETE!</div>
+            <div id="modalText">Score: 0</div>
+            <div class="modal-btns">
+                <button class="pixel-btn" id="modalBtn" onclick="handleModalAction()">NEXT</button>
+                <button class="pixel-btn blue-btn" id="restartBtn" style="display:none;" onclick="restartFromModal()">↻ RESTART</button>
+            </div>
+        </div>
+    </div>
+    <div id="controls">WASD / ARROWS: MOVE &nbsp;|&nbsp; W / ↑ / SPACE: JUMP &nbsp;|&nbsp; K: FIRE (FIREBALLS HURT BOSS)</div>
+</div>
+
+<script src="game.js"></script>
+<script src="gate.js"></script>
+</body>
+</html>

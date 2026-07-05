@@ -1,0 +1,2821 @@
+// ============================================================
+//  GLOBAL CONFIG
+// ============================================================
+let fireKey = 'K';
+let modalActionStr = '';
+
+// ── SKIN SYSTEM ──────────────────────────────────────────────
+// Each skin has: colors, unlockLevel, buff stats
+// buffs: speed multiplier, jumpForce multiplier, fireCooldown divisor, invincibleBonus frames, scoreBonus multiplier
+const SKINS = [
+    { id:'classic', name:'ADVENTURER', unlockLevel:1,
+      desc:'BALANCED STATS', tag:'DEFAULT',
+      colors:{hat:'#e53935',body:'#1976d2',skin:'#ffe0b2',shoe:'#3e2723'},
+      buff:{speed:1.0, jump:1.0, fireCooldown:1.0, invBonus:0, scoreBonus:1.0} },
+
+    { id:'ninja',   name:'SHADOW', unlockLevel:5,
+      desc:'+30% SPEED  SILENT STEPS', tag:'WORLD 1',
+      colors:{hat:'#1a1a2e',body:'#16213e',skin:'#c8a882',shoe:'#0f0e17'},
+      buff:{speed:1.3, jump:1.05, fireCooldown:1.0, invBonus:0, scoreBonus:1.0} },
+
+    { id:'knight',  name:'IRONCLAD', unlockLevel:10,
+      desc:'+60 INVINCIBILITY FRAMES', tag:'WORLD 2',
+      colors:{hat:'#b0bec5',body:'#78909c',skin:'#ffe0b2',shoe:'#37474f'},
+      buff:{speed:0.9, jump:1.0, fireCooldown:1.0, invBonus:60, scoreBonus:1.0} },
+
+    { id:'wizard',  name:'ARCANE', unlockLevel:15,
+      desc:'2x FIRE RATE  +20% JUMP', tag:'WORLD 3',
+      colors:{hat:'#6a0dad',body:'#4a0080',skin:'#e8d5c4',shoe:'#2d0050'},
+      buff:{speed:1.0, jump:1.2, fireCooldown:2.0, invBonus:0, scoreBonus:1.0} },
+
+    { id:'robot',   name:'UNIT-7', unlockLevel:20,
+      desc:'+20% SCORE  METAL SKIN', tag:'WORLD 4',
+      colors:{hat:'#00bcd4',body:'#0097a7',skin:'#b0bec5',shoe:'#455a64'},
+      buff:{speed:1.0, jump:1.0, fireCooldown:1.0, invBonus:0, scoreBonus:1.2} },
+
+    { id:'inferno', name:'BLAZE', unlockLevel:25,
+      desc:'3x FIRE RATE  FIRE FOREVER', tag:'WORLD 5',
+      colors:{hat:'#ff6f00',body:'#e65100',skin:'#ffccbc',shoe:'#bf360c'},
+      buff:{speed:1.1, jump:1.0, fireCooldown:3.0, invBonus:0, scoreBonus:1.0} },
+
+    { id:'golden',  name:'GILDED', unlockLevel:30,
+      desc:'ALL BUFFS  MAXIMUM GLORY', tag:'ALL CLEAR',
+      colors:{hat:'#ffd700',body:'#ffb300',skin:'#fff9c4',shoe:'#f57f17'},
+      buff:{speed:1.15, jump:1.15, fireCooldown:1.8, invBonus:40, scoreBonus:1.5} },
+];
+let activeSkin = 0;
+function getSkinColors() { return SKINS[activeSkin].colors; }
+function getSkinBuff()   { return SKINS[activeSkin].buff; }
+function isSkinUnlocked(idx) {
+    return levelProgress.highestUnlocked > SKINS[idx].unlockLevel || SKINS[idx].unlockLevel === 1;
+}
+
+// ── COMBO SYSTEM ─────────────────────────────────────────────
+let comboCount = 0, comboTimer = 0;
+const COMBO_WINDOW = 90; // frames
+
+// ── WALL JUMP ─────────────────────────────────────────────────
+// tracked in player object: wallSliding, wallDir, wallJumpCooldown
+
+// ── SECRET STARS ─────────────────────────────────────────────
+// Each level can have secretStars array in level data; stored in progress
+let secretStarObjs = []; // live star objects this level
+
+// ── ACHIEVEMENTS ─────────────────────────────────────────────
+const ACHIEVEMENTS = [
+    { id:'first_blood',  icon:'⚔️',  name:'FIRST BLOOD',      desc:'Stomp your first enemy',          check: s => s.totalStomp >= 1 },
+    { id:'coin_hoarder', icon:'🪙',  name:'COIN HOARDER',     desc:'Collect 100 coins total',         check: s => s.totalCoins >= 100 },
+    { id:'speedster',    icon:'⚡',  name:'SPEEDSTER',         desc:'Complete a level under 30s',      check: s => s.bestLevelTime <= 30 },
+    { id:'explorer',     icon:'🗺️',  name:'EXPLORER',          desc:'Unlock 10 levels',                check: s => levelProgress.highestUnlocked >= 10 },
+    { id:'sky_high',     icon:'☁️',  name:'SKY HIGH',          desc:'Reach World 4 (Sky)',             check: s => levelProgress.highestUnlocked >= 16 },
+    { id:'untouchable',  icon:'🛡️',  name:'UNTOUCHABLE',       desc:'Clear a level without getting hit',check: s => s.flawlessLevel },
+    { id:'pyro',         icon:'🔥',  name:'PYRO',              desc:'Fire 50 fireballs',               check: s => s.totalFireballs >= 50 },
+    { id:'boss_slayer',  icon:'💀',  name:'BOSS SLAYER',       desc:'Defeat your first boss',          check: s => s.totalBossKills >= 1 },
+    { id:'star_hunter',  icon:'⭐',  name:'STAR HUNTER',       desc:'Find 5 secret stars',             check: s => s.totalSecretStars >= 5 },
+    { id:'wall_rat',     icon:'🧗',  name:'WALL RAT',          desc:'Wall jump 10 times',              check: s => s.totalWallJumps >= 10 },
+    { id:'combo_king',   icon:'👑',  name:'COMBO KING',        desc:'Get a 5x kill combo',             check: s => s.bestCombo >= 5 },
+    { id:'quest_done',   icon:'🏆',  name:'QUEST COMPLETE',    desc:'Beat all 30 levels',              check: s => levelProgress.highestUnlocked > 30 },
+];
+let achStats = JSON.parse(localStorage.getItem('gordonAchStats') || '{}');
+let unlockedAchs = JSON.parse(localStorage.getItem('gordonAchs') || '[]');
+function saveAchs() { try { localStorage.setItem('gordonAchs', JSON.stringify(unlockedAchs)); localStorage.setItem('gordonAchStats', JSON.stringify(achStats)); } catch(e){} }
+
+// ── PAUSE ─────────────────────────────────────────────────────
+let gamePaused = false;
+
+// ── DAMAGE FLASH ─────────────────────────────────────────────
+let damageFlashTimer = 0;
+let timeAttackMode = false;
+let levelStartTime = 0;
+let bestTimes = JSON.parse(localStorage.getItem('gordonBestTimes') || '{}');
+function saveBestTimes() { try { localStorage.setItem('gordonBestTimes', JSON.stringify(bestTimes)); } catch(e){} }
+
+// ── MOVING PLATFORMS ─────────────────────────────────────────
+let movingPlatforms = [];
+
+function confirmBackToMenu() {
+    if (!gState || gState.levelComplete) return;
+    stopGame();
+    showMenu();
+    showLevelSelect();
+}
+
+// Saved progress: which levels are unlocked/completed
+let levelProgress = JSON.parse(localStorage.getItem('gordonProgress') || 'null') || { highestUnlocked:1, completed:{} };
+function saveProgress() { try { localStorage.setItem('gordonProgress', JSON.stringify(levelProgress)); } catch(e){} }
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Load saved skin
+    const savedSkin = parseInt(localStorage.getItem('gordonSkin') || '0');
+    if (!isNaN(savedSkin) && savedSkin >= 0 && savedSkin < SKINS.length) activeSkin = savedSkin;
+
+    const wrap = document.getElementById('menuStars');
+    for (let i = 0; i < 60; i++) {
+        const s = document.createElement('div');
+        s.className = 'menu-star';
+        const sz = Math.random() * 2 + 1;
+        s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*72}%;left:${Math.random()*100}%;animation-delay:${Math.random()*2}s;animation-duration:${1.5+Math.random()*2}s;`;
+        wrap.appendChild(s);
+    }
+});
+
+// ============================================================
+//  SCREEN NAV
+// ============================================================
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+    const el = document.getElementById(id);
+    el.style.display = 'flex';
+}
+function showMenu() { stopGame(); showScreen('menuScreen'); }
+function showSettingsMenu() { document.getElementById('fireKeyInput').value = fireKey; document.getElementById('settingsPanel').style.display = 'block'; }
+function hideSettings() { document.getElementById('settingsPanel').style.display = 'none'; }
+function saveSettings() {
+    const k = document.getElementById('fireKeyInput').value.toUpperCase();
+    if (k && k.length === 1) { fireKey = k; hideSettings(); }
+    else alert('Enter a single key!');
+}
+function startFromLevel(num) {
+    showScreen('gameContainer');
+    initGame(num);
+}
+
+// ============================================================
+//  LEVEL SELECT
+// ============================================================
+const levelBgLabels = ['DAY','DAY','DAY','SUNSET','BOSS','NIGHT','NIGHT','NIGHT','NIGHT','BOSS','CAVE','CAVE','CAVE','CAVE','BOSS','SKY','SKY','SKY','SKY','BOSS','SUNSET','SUNSET','SUNSET','SUNSET','BOSS','GAUNTLET','GAUNTLET','GAUNTLET','GAUNTLET','BOSS'];
+
+function showLevelSelect() {
+    buildLevelGrid();
+    showScreen('levelSelectScreen');
+}
+
+// ── SKIN SCREEN ───────────────────────────────────────────────
+function showSkinScreen() {
+    buildSkinGrid();
+    updateTAToggleUI();
+    showScreen('skinScreen');
+}
+
+function buildSkinGrid() {
+    const grid = document.getElementById('skGrid');
+    grid.innerHTML = '';
+    SKINS.forEach((skin, idx) => {
+        const unlocked = isSkinUnlocked(idx);
+        const isActive = idx === activeSkin;
+        const card = document.createElement('div');
+        card.className = 'sk-card' + (isActive ? ' active' : '') + (unlocked ? '' : ' locked');
+
+        // Mini canvas preview
+        const cvs = document.createElement('canvas');
+        cvs.className = 'sk-canvas';
+        cvs.width = 52; cvs.height = 60;
+        drawSkinPreview(cvs, skin.colors, unlocked);
+        card.appendChild(cvs);
+
+        // Name
+        const nameEl = document.createElement('div');
+        nameEl.className = 'sk-name';
+        nameEl.textContent = skin.name;
+        card.appendChild(nameEl);
+
+        if (unlocked) {
+            // Buff description
+            const descEl = document.createElement('div');
+            descEl.className = 'sk-buff-desc';
+            descEl.textContent = skin.desc;
+            card.appendChild(descEl);
+        } else {
+            // Lock + unlock hint
+            const lockEl = document.createElement('div');
+            lockEl.className = 'sk-lock';
+            lockEl.textContent = '🔒';
+            card.appendChild(lockEl);
+            const ulEl = document.createElement('div');
+            ulEl.className = 'sk-unlock-label';
+            ulEl.textContent = `CLEAR ${skin.tag}`;
+            card.appendChild(ulEl);
+        }
+
+        // Active checkmark badge
+        if (isActive) {
+            const badge = document.createElement('div');
+            badge.className = 'sk-active-badge';
+            badge.textContent = '✓';
+            badge.style.color = 'var(--gold)';
+            card.appendChild(badge);
+        }
+
+        if (unlocked) {
+            const i = idx;
+            card.addEventListener('click', () => selectSkin(i));
+        }
+        grid.appendChild(card);
+    });
+}
+
+function drawSkinPreview(canvas, colors, unlocked) {
+    const c = canvas.getContext('2d');
+    c.clearRect(0, 0, 52, 60);
+    if (!unlocked) { c.fillStyle = 'rgba(255,255,255,0.05)'; c.fillRect(0,0,52,60); return; }
+    const sc = 1.4;
+    const ox = 4, oy = 2;
+    // Hat
+    c.fillStyle = colors.hat;
+    c.fillRect(ox+3*sc, oy, 20*sc, 7*sc);
+    c.fillRect(ox, oy+7*sc, 26*sc, 4*sc);
+    // Face
+    c.fillStyle = colors.skin;
+    c.fillRect(ox+4*sc, oy+11*sc, 18*sc, 10*sc);
+    // Eyes
+    c.fillStyle = '#000';
+    c.fillRect(ox+14*sc, oy+14*sc, 3*sc, 3*sc);
+    // Body
+    c.fillStyle = colors.body;
+    c.fillRect(ox+2*sc, oy+21*sc, 22*sc, 14*sc);
+    // Shoes
+    c.fillStyle = colors.shoe;
+    c.fillRect(ox, oy+35*sc, 11*sc, 5*sc);
+    c.fillRect(ox+15*sc, oy+35*sc, 11*sc, 5*sc);
+}
+
+function selectSkin(idx) {
+    if (!isSkinUnlocked(idx)) return;
+    activeSkin = idx;
+    try { localStorage.setItem('gordonSkin', idx); } catch(e){}
+    buildSkinGrid();
+}
+
+function toggleTimeAttack() {
+    timeAttackMode = !timeAttackMode;
+    updateTAToggleUI();
+}
+
+function updateTAToggleUI() {
+    const tog = document.getElementById('taToggle');
+    if (tog) tog.className = 'ta-toggle' + (timeAttackMode ? ' on' : '');
+}
+
+function buildLevelGrid() {
+    const grid = document.getElementById('lsGrid');
+    grid.innerHTML = '';
+    const total = 30;
+    for (let i = 1; i <= total; i++) {
+        const cell = document.createElement('div');
+        const isBoss = i % 5 === 0;
+        const isUnlocked = i <= levelProgress.highestUnlocked;
+        const isCompleted = !!levelProgress.completed[i];
+        const secretStarCount = (levelProgress.secretStars && levelProgress.secretStars[i]) || 0;
+
+        cell.className = 'ls-cell' +
+            (isBoss ? ' boss-cell' : '') +
+            (isCompleted ? ' completed' : isUnlocked ? ' unlocked' : ' locked');
+
+        const numEl = document.createElement('div');
+        numEl.className = 'ls-num';
+        numEl.textContent = i;
+
+        const bgTag = document.createElement('div');
+        bgTag.className = 'ls-bg-tag';
+        bgTag.textContent = (levels[i-1] && levels[i-1].name) ? levels[i-1].name.split('—')[0].trim() : (levelBgLabels[i-1] || '');
+
+        cell.appendChild(numEl);
+
+        if (!isUnlocked) {
+            const lock = document.createElement('div');
+            lock.className = 'ls-lock-icon';
+            lock.textContent = '🔒';
+            cell.appendChild(lock);
+        } else if (isBoss) {
+            const bl = document.createElement('div');
+            bl.className = 'ls-boss-label';
+            bl.textContent = 'BOSS';
+            cell.appendChild(bl);
+            if (isCompleted) {
+                const star = document.createElement('div');
+                star.className = 'ls-star';
+                star.textContent = '⭐';
+                cell.appendChild(star);
+            }
+        } else if (isCompleted) {
+            const star = document.createElement('div');
+            star.className = 'ls-star';
+            star.textContent = '⭐';
+            if (secretStarCount > 0) star.textContent += '★'.repeat(secretStarCount);
+            cell.appendChild(star);
+        }
+
+        cell.appendChild(bgTag);
+
+        if (isUnlocked) {
+            const lvNum = i;
+            cell.addEventListener('click', () => startFromLevel(lvNum));
+            // Hover preview
+            cell.addEventListener('mouseenter', (ev) => showLevelPreview(lvNum, ev.currentTarget));
+            cell.addEventListener('mouseleave', () => hideLevelPreview());
+        }
+
+        grid.appendChild(cell);
+    }
+}
+
+function showLevelPreview(lvNum, cell) {
+    const preview = document.getElementById('lvlPreview');
+    const lvl = levels[lvNum - 1];
+    if (!lvl) return;
+    const isBoss = lvNum % 5 === 0;
+    const best = bestTimes[`level_${lvNum}`];
+    const bestStr = best ? `${Math.floor(best/60)}:${(best%60).toString().padStart(2,'0')}` : '--:--';
+    const secretCount = (levelProgress.secretStars && levelProgress.secretStars[lvNum]) || 0;
+    const maxStars = Math.min(1 + Math.floor(lvNum / 6), 3);
+
+    document.getElementById('lvlpNum').textContent = `LEVEL ${lvNum}`;
+    document.getElementById('lvlpName').textContent = lvl.name || `LEVEL ${lvNum}`;
+    document.getElementById('lvlpStars').textContent = '⭐'.repeat(secretCount) + '☆'.repeat(Math.max(0, maxStars - secretCount));
+    document.getElementById('lvlpBest').textContent = `BEST: ${bestStr}`;
+    const typeEl = document.getElementById('lvlpType');
+    if (isBoss) {
+        typeEl.textContent = '⚠ BOSS LEVEL';
+        typeEl.style.color = '#ff4444';
+    } else {
+        typeEl.textContent = lvl.bg ? lvl.bg.toUpperCase() + ' WORLD' : '';
+        typeEl.style.color = 'rgba(255,215,0,0.5)';
+    }
+
+    // Position tooltip near the cell
+    const rect = cell.getBoundingClientRect();
+    const screenRect = document.getElementById('levelSelectScreen').getBoundingClientRect();
+    let left = rect.left - screenRect.left + rect.width + 6;
+    let top = rect.top - screenRect.top;
+    if (left + 180 > 800) left = rect.left - screenRect.left - 186;
+    if (top + 120 > 580) top = 580 - 120;
+    preview.style.left = left + 'px';
+    preview.style.top = top + 'px';
+    preview.style.display = 'block';
+}
+
+function hideLevelPreview() {
+    document.getElementById('lvlPreview').style.display = 'none';
+}
+
+// ============================================================
+//  CANVAS / CONSTANTS
+// ============================================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const GRAVITY    = 0.55;
+const JUMP_FORCE = -13.5;
+const MOVE_SPEED = 7;
+
+// ============================================================
+//  STATE
+// ============================================================
+let gState = null, player = null, boss = null;
+let platforms = [], coinObjs = [], enemies = [], powerUps = [], fireballs = [], bossFireballs = [];
+let spikes = [], turrets = [], turretBullets = [], rangerFireballs = [];
+let keys = {}, shake = {x:0,y:0,intensity:0,time:0}, particles = [];
+let rainbowInput = '';
+const RAINBOW_CODE = 'lord67';
+const HACKER_CODE  = 'hacker67';
+let hackerInput = '';
+let gameLoopId = null, frameCount = 0;
+
+// Confetti state for LC overlay
+let confettiActive = false, confettiPieces = [];
+
+function stopGame() { if (gameLoopId) { cancelAnimationFrame(gameLoopId); gameLoopId = null; } }
+
+// Global cheat listener — works on menu AND in-game
+document.addEventListener('keydown', e => {
+    hackerInput += e.key.toLowerCase();
+    if (hackerInput.length > 12) hackerInput = hackerInput.slice(-12);
+    if (hackerInput.endsWith(HACKER_CODE)) { activateHackerCheat(); hackerInput = ''; }
+});
+
+function activateHackerCheat() {
+    // Unlock all levels
+    levelProgress.highestUnlocked = 31; // beyond all 30
+    for (let i = 1; i <= 30; i++) levelProgress.completed[i] = true;
+    saveProgress();
+
+    // Unlock all skins
+    activeSkin = activeSkin; // keep current selection
+    try { localStorage.setItem('gordonSkin', activeSkin); } catch(e) {}
+
+    // Visual feedback — flash the screen
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+        position:fixed; inset:0; z-index:9999999;
+        background:linear-gradient(135deg,#00ff88,#00e5ff,#ff00ff,#ffd700);
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        font-family:'Press Start 2P',monospace; text-align:center;
+        animation:hackerFlash 2.2s ease forwards;
+        pointer-events:none;
+    `;
+    flash.innerHTML = `
+        <div style="font-size:28px;color:#000;text-shadow:none;margin-bottom:16px;">💀 HACKER MODE 💀</div>
+        <div style="font-size:12px;color:#000;letter-spacing:3px;margin-bottom:10px;">ALL LEVELS UNLOCKED</div>
+        <div style="font-size:12px;color:#000;letter-spacing:3px;">ALL SKINS UNLOCKED</div>
+    `;
+    const style = document.createElement('style');
+    style.textContent = `@keyframes hackerFlash {
+        0%   { opacity:0; transform:scale(0.95); }
+        15%  { opacity:1; transform:scale(1); }
+        75%  { opacity:1; }
+        100% { opacity:0; transform:scale(1.03); }
+    }`;
+    document.head.appendChild(style);
+    document.body.appendChild(flash);
+    setTimeout(() => { flash.remove(); style.remove(); }, 2200);
+
+    // Rebuild screens if visible
+    if (document.getElementById('levelSelectScreen').style.display === 'flex') buildLevelGrid();
+    if (document.getElementById('skinScreen').style.display === 'flex') buildSkinGrid();
+}
+
+// ============================================================
+//  INPUT
+// ============================================================
+document.addEventListener('keydown', e => {
+    if (document.getElementById('gameContainer').style.display !== 'flex') return;
+    // Pause on Escape or P
+    if (e.code === 'Escape' || e.code === 'KeyP') {
+        if (gamePaused) resumeGame(); else pauseGame();
+        return;
+    }
+    if (gamePaused) return;
+    keys[e.code] = true;
+    rainbowInput += e.key.toLowerCase();
+    if (rainbowInput.length > 10) rainbowInput = rainbowInput.slice(-10);
+    if (rainbowInput.endsWith(RAINBOW_CODE)) { activateRainbow(); rainbowInput = ''; }
+    if (!player || !gState || gState.over || gState.levelComplete) return;
+
+    if ((e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp')) {
+        const jf = JUMP_FORCE * getSkinBuff().jump;
+        if (player.grounded) {
+            player.velY = jf; player.grounded = false; player.doubleJumpUsed = false;
+            screenShake(3, 8);
+            spawnParticles(player.x+16, player.y+player.h, 4, {color:'rgba(255,255,255,0.4)', size:2, life:12});
+        } else if (player.wallSliding && player.wallJumpCooldown <= 0) {
+            // Wall jump
+            player.velY = jf * 0.9;
+            player.velX = -player.wallDir * MOVE_SPEED * getSkinBuff().speed * 1.4;
+            player.facing = -player.wallDir;
+            player.wallSliding = false;
+            player.doubleJumpUsed = false;
+            player.wallJumpCooldown = 14;
+            if (!achStats) achStats = {};
+            achStats.totalWallJumps = (achStats.totalWallJumps || 0) + 1;
+            saveAchs(); checkAchievements();
+            spawnParticles(player.x + (player.wallDir > 0 ? player.w : 0), player.y + player.h * 0.5, 12, {color:'#88eeff', size:3, life:20});
+            screenShake(3, 6);
+        } else if (!player.doubleJumpUsed) {
+            player.velY = jf * 0.85; player.doubleJumpUsed = true;
+            spawnParticles(player.x+16, player.y+player.h/2, 10, {color:'#88eeff', size:3, life:18});
+            screenShake(2, 5);
+        }
+    }
+    if (e.key.toUpperCase() === fireKey) {
+        if (player.powerUp === 'fire') {
+            shootFireball();
+            if (!achStats) achStats = {};
+            achStats.totalFireballs = (achStats.totalFireballs || 0) + 1;
+            if (achStats.totalFireballs % 10 === 0) { saveAchs(); checkAchievements(); }
+        }
+        if (player.isRainbow) {
+            player.velY = -12;
+            spawnParticles(player.x+16, player.y+player.h, 12, {color:'#00ffff', size:3, life:20});
+            screenShake(4, 8);
+        }
+    }
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+// ============================================================
+//  LEVELS — 30 levels (every 5th is a boss)
+// ============================================================
+const levels = [
+    // ── WORLD 1 ─────────────────────────────────────────────
+    { bg:'day', name:'GREEN HILLS',
+      platforms:[
+        {x:0,y:550,w:3200,h:50},
+        {x:300,y:460,w:180,h:20},{x:600,y:400,w:180,h:20},{x:920,y:460,w:180,h:20},
+        {x:1200,y:380,w:180,h:20},{x:1500,y:460,w:180,h:20},{x:1800,y:400,w:180,h:20},
+        {x:2100,y:460,w:180,h:20},{x:2400,y:380,w:180,h:20},{x:2700,y:440,w:180,h:20},
+        {x:2950,y:380,w:180,h:20}
+      ],
+      coins:[{x:370,y:527},{x:650,y:527},{x:950,y:527},{x:1250,y:527},{x:1550,y:527},{x:1850,y:527},
+             {x:2150,y:527},{x:2450,y:527},{x:2750,y:527},{x:380,y:437},{x:660,y:377},{x:1260,y:357},
+             {x:1560,y:437},{x:1860,y:377},{x:2460,y:357}],
+      enemies:[{x:450,y:518,type:'GOOMBA'},{x:750,y:518,type:'GOOMBA'},{x:1050,y:518,type:'GOOMBA'},
+               {x:1350,y:518,type:'GOOMBA'},{x:1650,y:518,type:'KOOPA'},{x:1950,y:518,type:'GOOMBA'},
+               {x:2250,y:518,type:'KOOPA'},{x:2550,y:518,type:'GOOMBA'},{x:2850,y:518,type:'GOOMBA'}],
+      powerUps:[{x:610,y:374,type:'mushroom'},{x:1810,y:374,type:'mushroom'}],
+      flag:{x:3100,y:550} },
+
+    { bg:'day', name:'PLATFORM PEAKS',
+      platforms:[
+        {x:0,y:550,w:400,h:50},{x:500,y:520,w:120,h:20},{x:700,y:480,w:120,h:20},
+        {x:900,y:440,w:120,h:20},{x:1100,y:400,w:120,h:20},{x:1300,y:360,w:120,h:20},
+        {x:1500,y:400,w:120,h:20},{x:1700,y:440,w:120,h:20},{x:1900,y:480,w:120,h:20},
+        {x:2100,y:440,w:120,h:20},{x:2300,y:400,w:120,h:20},{x:2500,y:360,w:120,h:20},
+        {x:2700,y:400,w:120,h:20},{x:2900,y:440,w:300,h:50}
+      ],
+      coins:[{x:545,y:497},{x:745,y:457},{x:945,y:417},{x:1145,y:377},{x:1345,y:337},
+             {x:1545,y:377},{x:1745,y:417},{x:1945,y:457},{x:2145,y:417},{x:2345,y:377},
+             {x:2545,y:337},{x:2745,y:377}],
+      enemies:[{x:530,y:488,type:'GOOMBA'},{x:930,y:408,type:'GOOMBA'},{x:1330,y:328,type:'KOOPA'},
+               {x:1730,y:408,type:'GOOMBA'},{x:2130,y:408,type:'KOOPA'},{x:2530,y:328,type:'KOOPA'},
+               {x:2730,y:368,type:'GOOMBA'}],
+      powerUps:[{x:1310,y:333,type:'mushroom'},{x:2510,y:333,type:'fireFlower'}],
+      flag:{x:3080,y:490}, playerStart:{x:60,y:490} },
+
+    { bg:'day', name:'COIN VALLEY',
+      platforms:[
+        {x:0,y:550,w:600,h:50},{x:700,y:550,w:200,h:50},{x:1000,y:550,w:200,h:50},
+        {x:1300,y:550,w:200,h:50},{x:1600,y:550,w:200,h:50},{x:1900,y:550,w:200,h:50},
+        {x:2200,y:550,w:200,h:50},{x:2500,y:550,w:200,h:50},{x:2800,y:550,w:400,h:50},
+        {x:250,y:440,w:200,h:20},{x:700,y:400,w:200,h:20},{x:1100,y:440,w:200,h:20},
+        {x:1500,y:400,w:200,h:20},{x:1900,y:440,w:200,h:20},{x:2300,y:400,w:200,h:20},
+        {x:2700,y:440,w:200,h:20}
+      ],
+      coins:[{x:100,y:527},{x:760,y:527},{x:1060,y:527},{x:1360,y:527},{x:1660,y:527},
+             {x:1960,y:527},{x:2260,y:527},{x:2560,y:527},{x:2860,y:527},
+             {x:310,y:417},{x:780,y:377},{x:1180,y:417},{x:1580,y:377},{x:1980,y:417},
+             {x:2380,y:377},{x:2780,y:417}],
+      enemies:[{x:150,y:518,type:'GOOMBA'},{x:780,y:518,type:'KOOPA'},{x:1180,y:518,type:'GOOMBA'},
+               {x:1580,y:518,type:'GOOMBA'},{x:1980,y:518,type:'KOOPA'},{x:2380,y:518,type:'GOOMBA'},
+               {x:2780,y:518,type:'KOOPA'},{x:800,y:368,type:'RANGER'},{x:2400,y:368,type:'RANGER'}],
+      spikes:[{x:640,y:530,w:60,h:20},{x:940,y:530,w:60,h:20},{x:1240,y:530,w:60,h:20},
+              {x:1540,y:530,w:60,h:20},{x:1840,y:530,w:60,h:20},{x:2140,y:530,w:60,h:20},{x:2440,y:530,w:60,h:20}],
+      powerUps:[{x:270,y:414,type:'mushroom'},{x:2320,y:374,type:'fireFlower'}],
+      flag:{x:3100,y:550} },
+
+    { bg:'sunset', name:'AMBER CLIFFS',
+      platforms:[
+        {x:0,y:550,w:300,h:50},{x:400,y:500,w:150,h:20},{x:640,y:450,w:150,h:20},
+        {x:880,y:400,w:150,h:20},{x:1120,y:450,w:150,h:20},{x:1360,y:400,w:150,h:20},
+        {x:1600,y:350,w:150,h:20},{x:1840,y:400,w:150,h:20},{x:2080,y:450,w:150,h:20},
+        {x:2320,y:400,w:150,h:20},{x:2560,y:450,w:150,h:20},{x:2800,y:400,w:150,h:20},
+        {x:3000,y:550,w:300,h:50}
+      ],
+      coins:[{x:455,y:477},{x:695,y:427},{x:935,y:377},{x:1175,y:427},{x:1415,y:377},
+             {x:1655,y:327},{x:1895,y:377},{x:2135,y:427},{x:2375,y:377},{x:2615,y:427},
+             {x:2855,y:377}],
+      enemies:[{x:430,y:468,type:'GOOMBA'},{x:670,y:418,type:'KOOPA'},{x:910,y:368,type:'GOOMBA'},
+               {x:1150,y:418,type:'KOOPA'},{x:1390,y:368,type:'RANGER'},{x:1630,y:318,type:'KOOPA'},
+               {x:1870,y:368,type:'GOOMBA'},{x:2110,y:418,type:'KOOPA'},{x:2350,y:368,type:'RANGER'},
+               {x:2590,y:418,type:'KOOPA'},{x:2830,y:368,type:'GOOMBA'}],
+      spikes:[{x:400,y:480,w:150,h:20},{x:880,y:380,w:60,h:20},{x:1600,y:330,w:60,h:20},{x:2320,y:380,w:60,h:20}],
+      turrets:[{x:1130,y:418,cooldown:100},{x:2560,y:408,cooldown:100}],
+      powerUps:[{x:1610,y:323,type:'mushroom'},{x:2330,y:373,type:'fireFlower'}],
+      flag:{x:3100,y:550} },
+
+    { bg:'boss', name:'BOSS 1 — GOOMBA KING', isBossLevel:true,
+      platforms:[
+        {x:0,y:550,w:3200,h:50},
+        {x:400,y:430,w:200,h:20},{x:800,y:370,w:200,h:20},{x:1200,y:430,w:200,h:20},
+        {x:1600,y:370,w:200,h:20},{x:2000,y:430,w:200,h:20},{x:2400,y:370,w:200,h:20},
+        {x:2800,y:430,w:200,h:20}
+      ],
+      enemies:[{x:200,y:518,type:'GOOMBA'},{x:600,y:518,type:'KOOPA'},{x:1000,y:518,type:'GOOMBA'},
+               {x:1400,y:518,type:'KOOPA'},{x:1800,y:518,type:'GOOMBA'},{x:2200,y:518,type:'KOOPA'},
+               {x:2600,y:518,type:'GOOMBA'},{x:820,y:338,type:'RANGER'},{x:1620,y:338,type:'RANGER'}],
+      spikes:[{x:600,y:530,w:200,h:20},{x:1100,y:530,w:100,h:20},{x:1700,y:530,w:200,h:20},{x:2500,y:530,w:200,h:20}],
+      turrets:[{x:1210,y:408,cooldown:90},{x:2010,y:408,cooldown:85}],
+      powerUps:[{x:420,y:404,type:'fireFlower'},{x:2420,y:344,type:'fireFlower'}],
+      flag:{x:3000,y:550} },
+
+    // ── WORLD 2 ─────────────────────────────────────────────
+    { bg:'night', name:'MOONLIT MARSH',
+      platforms:[
+        {x:0,y:550,w:500,h:50},{x:600,y:550,w:300,h:50},{x:1000,y:550,w:300,h:50},
+        {x:1400,y:550,w:300,h:50},{x:1800,y:550,w:300,h:50},{x:2200,y:550,w:300,h:50},
+        {x:2600,y:550,w:300,h:50},{x:3000,y:550,w:300,h:50},
+        {x:200,y:440,w:180,h:20},{x:700,y:410,w:180,h:20},{x:1100,y:380,w:180,h:20},
+        {x:1500,y:410,w:180,h:20},{x:1900,y:440,w:180,h:20},{x:2300,y:410,w:180,h:20},
+        {x:2700,y:380,w:180,h:20},{x:3100,y:410,w:180,h:20}
+      ],
+      coins:[{x:100,y:527},{x:660,y:527},{x:1060,y:527},{x:1460,y:527},{x:1860,y:527},
+             {x:2260,y:527},{x:2660,y:527},{x:3060,y:527},
+             {x:260,y:417},{x:780,y:387},{x:1180,y:357},{x:1580,y:387},{x:1980,y:417},
+             {x:2380,y:387},{x:2780,y:357}],
+      enemies:[{x:120,y:518,type:'GOOMBA'},{x:700,y:518,type:'KOOPA'},{x:1100,y:518,type:'GOOMBA'},
+               {x:1500,y:518,type:'TANK'},{x:1900,y:518,type:'KOOPA'},{x:2300,y:518,type:'GOOMBA'},
+               {x:2700,y:518,type:'TANK'},{x:3100,y:518,type:'GOOMBA'},
+               {x:800,y:300,type:'FLYER'},{x:1900,y:310,type:'FLYER'},{x:2800,y:290,type:'FLYER'},
+               {x:1180,y:348,type:'KOOPA'}],
+      powerUps:[{x:220,y:414,type:'mushroom'},{x:2320,y:384,type:'fireFlower'}],
+      flag:{x:3200,y:550} },
+
+    { bg:'night', name:'STAR FIELD',
+      platforms:[
+        {x:0,y:420,w:220,h:20},{x:300,y:380,w:160,h:20},{x:540,y:340,w:160,h:20},
+        {x:780,y:300,w:160,h:20},{x:1020,y:340,w:160,h:20},{x:1260,y:380,w:160,h:20},
+        {x:1500,y:340,w:160,h:20},{x:1740,y:300,w:160,h:20},{x:1980,y:340,w:160,h:20},
+        {x:2220,y:380,w:160,h:20},{x:2460,y:340,w:160,h:20},{x:2700,y:300,w:160,h:20},
+        {x:2940,y:340,w:160,h:20},{x:3180,y:420,w:220,h:20}
+      ],
+      coins:[{x:60,y:397},{x:350,y:357},{x:590,y:317},{x:830,y:277},{x:1070,y:317},
+             {x:1310,y:357},{x:1550,y:317},{x:1790,y:277},{x:2030,y:317},{x:2270,y:357},
+             {x:2510,y:317},{x:2750,y:277},{x:2990,y:317},{x:3230,y:397}],
+      enemies:[{x:50,y:388,type:'KOOPA'},{x:320,y:348,type:'GOOMBA'},{x:560,y:308,type:'KOOPA'},
+               {x:800,y:268,type:'GOOMBA'},{x:1040,y:308,type:'KOOPA'},{x:1280,y:348,type:'GOOMBA'},
+               {x:1520,y:308,type:'KOOPA'},{x:1760,y:268,type:'GOOMBA'},{x:2000,y:308,type:'KOOPA'},
+               {x:2240,y:348,type:'GOOMBA'},{x:2480,y:308,type:'KOOPA'},{x:2720,y:268,type:'GOOMBA'}],
+      powerUps:[{x:790,y:274,type:'mushroom'},{x:2710,y:274,type:'fireFlower'}],
+      flag:{x:3300,y:420}, playerStart:{x:60,y:380} },
+
+    { bg:'night', name:'HAUNTED GAPS',
+      platforms:[
+        {x:0,y:550,w:250,h:50},{x:350,y:520,w:100,h:20},{x:550,y:480,w:100,h:20},
+        {x:750,y:440,w:100,h:20},{x:950,y:400,w:100,h:20},{x:1150,y:360,w:100,h:20},
+        {x:1350,y:320,w:100,h:20},{x:1550,y:360,w:100,h:20},{x:1750,y:400,w:100,h:20},
+        {x:1950,y:440,w:100,h:20},{x:2150,y:400,w:100,h:20},{x:2350,y:360,w:100,h:20},
+        {x:2550,y:320,w:100,h:20},{x:2750,y:360,w:100,h:20},{x:2950,y:400,w:100,h:20},
+        {x:3150,y:440,w:100,h:20},{x:3350,y:550,w:250,h:50}
+      ],
+      coins:[{x:375,y:497},{x:575,y:457},{x:775,y:417},{x:975,y:377},{x:1175,y:337},
+             {x:1375,y:297},{x:1575,y:337},{x:1775,y:377},{x:1975,y:417},{x:2175,y:377},
+             {x:2375,y:337},{x:2575,y:297},{x:2775,y:337},{x:2975,y:377},{x:3175,y:417}],
+      enemies:[{x:360,y:488,type:'KOOPA'},{x:760,y:408,type:'GOOMBA'},{x:1160,y:328,type:'RANGER'},
+               {x:1360,y:288,type:'GOOMBA'},{x:1760,y:368,type:'KOOPA'},{x:2160,y:368,type:'RANGER'},
+               {x:2560,y:288,type:'KOOPA'},{x:2960,y:368,type:'GOOMBA'},{x:3160,y:408,type:'KOOPA'}],
+      spikes:[{x:450,y:530,w:100,h:20},{x:850,y:530,w:80,h:20},{x:1250,y:530,w:80,h:20},
+              {x:1350,y:300,w:100,h:20},{x:2550,y:300,w:100,h:20}],
+      turrets:[{x:1150,y:338,cooldown:95},{x:2550,y:298,cooldown:85}],
+      powerUps:[{x:1360,y:293,type:'mushroom'},{x:2560,y:293,type:'fireFlower'}],
+      flag:{x:3460,y:550} },
+
+    { bg:'night', name:'DOUBLE DECKER',
+      platforms:[
+        {x:0,y:550,w:3600,h:50},
+        {x:200,y:430,w:3200,h:20},
+        {x:100,y:310,w:200,h:20},{x:450,y:310,w:200,h:20},{x:800,y:310,w:200,h:20},
+        {x:1150,y:310,w:200,h:20},{x:1500,y:310,w:200,h:20},{x:1850,y:310,w:200,h:20},
+        {x:2200,y:310,w:200,h:20},{x:2550,y:310,w:200,h:20},{x:2900,y:310,w:200,h:20},
+        {x:3200,y:310,w:200,h:20}
+      ],
+      coins:[{x:200,y:527},{x:500,y:527},{x:800,y:527},{x:1100,y:527},{x:1400,y:527},
+             {x:1700,y:527},{x:2000,y:527},{x:2300,y:527},{x:2600,y:527},{x:2900,y:527},
+             {x:160,y:407},{x:510,y:407},{x:860,y:407},{x:1210,y:407},{x:1560,y:407},
+             {x:1910,y:407},{x:2260,y:407},{x:2610,y:407},{x:2960,y:407},
+             {x:160,y:287},{x:860,y:287},{x:1560,y:287},{x:2260,y:287},{x:2960,y:287}],
+      enemies:[{x:300,y:518,type:'GOOMBA'},{x:700,y:518,type:'KOOPA'},{x:1100,y:518,type:'GOOMBA'},
+               {x:1500,y:518,type:'KOOPA'},{x:1900,y:518,type:'GOOMBA'},{x:2300,y:518,type:'KOOPA'},
+               {x:2700,y:518,type:'GOOMBA'},{x:3100,y:518,type:'KOOPA'},
+               {x:300,y:398,type:'KOOPA'},{x:900,y:398,type:'GOOMBA'},{x:1500,y:398,type:'KOOPA'},
+               {x:2100,y:398,type:'GOOMBA'},{x:2700,y:398,type:'KOOPA'},
+               {x:500,y:278,type:'GOOMBA'},{x:1500,y:278,type:'KOOPA'},{x:2500,y:278,type:'GOOMBA'}],
+      powerUps:[{x:860,y:283,type:'mushroom'},{x:2260,y:283,type:'fireFlower'}],
+      flag:{x:3450,y:550} },
+
+    { bg:'boss', name:'BOSS 2 — NIGHT TERROR', isBossLevel:true,
+      platforms:[
+        {x:0,y:550,w:3400,h:50},
+        {x:300,y:420,w:220,h:20},{x:750,y:360,w:220,h:20},{x:1200,y:420,w:220,h:20},
+        {x:1650,y:360,w:220,h:20},{x:2100,y:420,w:220,h:20},{x:2550,y:360,w:220,h:20},
+        {x:3000,y:420,w:220,h:20}
+      ],
+      enemies:[{x:200,y:518,type:'KOOPA'},{x:550,y:518,type:'GOOMBA'},{x:900,y:518,type:'KOOPA'},
+               {x:1250,y:518,type:'GOOMBA'},{x:1600,y:518,type:'KOOPA'},{x:1950,y:518,type:'GOOMBA'},
+               {x:2300,y:518,type:'KOOPA'},{x:2650,y:518,type:'GOOMBA'},{x:3000,y:518,type:'KOOPA'},
+               {x:770,y:328,type:'KOOPA'},{x:2570,y:328,type:'GOOMBA'}],
+      powerUps:[{x:320,y:394,type:'fireFlower'},{x:3020,y:394,type:'fireFlower'}],
+      flag:{x:3280,y:550} },
+
+    // ── WORLD 3 ─────────────────────────────────────────────
+    { bg:'cave', name:'DEEP DARK CAVE',
+      platforms:[
+        {x:0,y:180,w:280,h:20},{x:360,y:240,w:220,h:20},{x:660,y:300,w:220,h:20},
+        {x:960,y:360,w:220,h:20},{x:1260,y:420,w:220,h:20},{x:1560,y:360,w:220,h:20},
+        {x:1860,y:300,w:220,h:20},{x:2160,y:360,w:220,h:20},{x:2460,y:420,w:220,h:20},
+        {x:2760,y:360,w:220,h:20},{x:3060,y:300,w:220,h:20},{x:3360,y:550,w:300,h:50}
+      ],
+      coins:[{x:80,y:157},{x:420,y:217},{x:720,y:277},{x:1020,y:337},{x:1320,y:397},
+             {x:1620,y:337},{x:1920,y:277},{x:2220,y:337},{x:2520,y:397},{x:2820,y:337},
+             {x:3120,y:277}],
+      enemies:[{x:60,y:148,type:'GOOMBA'},{x:400,y:208,type:'KOOPA'},{x:700,y:268,type:'GOOMBA'},
+               {x:1000,y:328,type:'KOOPA'},{x:1300,y:388,type:'GOOMBA'},{x:1600,y:328,type:'KOOPA'},
+               {x:1900,y:268,type:'GOOMBA'},{x:2200,y:328,type:'KOOPA'},{x:2500,y:388,type:'GOOMBA'},
+               {x:2800,y:328,type:'KOOPA'},{x:3100,y:268,type:'GOOMBA'}],
+      powerUps:[{x:1280,y:393,type:'mushroom'},{x:2760,y:333,type:'fireFlower'}],
+      flag:{x:3500,y:550}, playerStart:{x:60,y:120} },
+
+    { bg:'cave', name:'LAVA VAULTS',
+      platforms:[
+        {x:0,y:550,w:350,h:50},{x:450,y:500,w:160,h:20},{x:700,y:440,w:160,h:20},
+        {x:950,y:380,w:160,h:20},{x:1200,y:440,w:160,h:20},{x:1450,y:500,w:160,h:20},
+        {x:1700,y:550,w:200,h:50},{x:2000,y:500,w:160,h:20},{x:2250,y:440,w:160,h:20},
+        {x:2500,y:380,w:160,h:20},{x:2750,y:440,w:160,h:20},{x:3000,y:500,w:160,h:20},
+        {x:3250,y:550,w:300,h:50}
+      ],
+      coins:[{x:490,y:477},{x:740,y:417},{x:990,y:357},{x:1240,y:417},{x:1490,y:477},
+             {x:2040,y:477},{x:2290,y:417},{x:2540,y:357},{x:2790,y:417},{x:3040,y:477},
+             {x:150,y:527},{x:1790,y:527},{x:3330,y:527}],
+      enemies:[{x:160,y:518,type:'GOOMBA'},{x:470,y:468,type:'KOOPA'},{x:720,y:408,type:'RANGER'},
+               {x:970,y:348,type:'KOOPA'},{x:1220,y:408,type:'GOOMBA'},{x:1470,y:468,type:'KOOPA'},
+               {x:2020,y:468,type:'GOOMBA'},{x:2270,y:408,type:'RANGER'},{x:2520,y:348,type:'GOOMBA'},
+               {x:2770,y:408,type:'KOOPA'},{x:3020,y:468,type:'GOOMBA'}],
+      spikes:[{x:350,y:530,w:100,h:20},{x:630,y:530,w:70,h:20},{x:870,y:530,w:80,h:20},
+              {x:1860,y:530,w:140,h:20},{x:2730,y:420,w:160,h:20}],
+      turrets:[{x:950,y:358,cooldown:80},{x:2500,y:358,cooldown:75}],
+      powerUps:[{x:960,y:353,type:'mushroom'},{x:2500,y:353,type:'fireFlower'}],
+      flag:{x:3420,y:550} },
+
+    { bg:'cave', name:'PILLAR MAZE',
+      platforms:[
+        {x:0,y:550,w:3600,h:50},
+        {x:150,y:440,w:120,h:20},{x:150,y:320,w:120,h:20},
+        {x:420,y:400,w:120,h:20},{x:420,y:280,w:120,h:20},
+        {x:690,y:440,w:120,h:20},{x:690,y:320,w:120,h:20},
+        {x:960,y:400,w:120,h:20},{x:960,y:280,w:120,h:20},
+        {x:1230,y:440,w:120,h:20},{x:1230,y:320,w:120,h:20},
+        {x:1500,y:400,w:120,h:20},{x:1500,y:280,w:120,h:20},
+        {x:1770,y:440,w:120,h:20},{x:1770,y:320,w:120,h:20},
+        {x:2040,y:400,w:120,h:20},{x:2040,y:280,w:120,h:20},
+        {x:2310,y:440,w:120,h:20},{x:2310,y:320,w:120,h:20},
+        {x:2580,y:400,w:120,h:20},{x:2580,y:280,w:120,h:20},
+        {x:2850,y:440,w:120,h:20},{x:2850,y:320,w:120,h:20},
+        {x:3120,y:400,w:120,h:20},{x:3120,y:280,w:120,h:20}
+      ],
+      coins:[{x:200,y:417},{x:200,y:297},{x:470,y:377},{x:470,y:257},{x:740,y:417},
+             {x:740,y:297},{x:1010,y:377},{x:1010,y:257},{x:1280,y:417},{x:1280,y:297},
+             {x:1550,y:377},{x:1550,y:257},{x:1820,y:417},{x:1820,y:297},{x:2090,y:377},
+             {x:2090,y:257},{x:2360,y:417},{x:2360,y:297},{x:2630,y:377},{x:2630,y:257}],
+      enemies:[{x:200,y:518,type:'GOOMBA'},{x:600,y:518,type:'KOOPA'},{x:1000,y:518,type:'GOOMBA'},
+               {x:1400,y:518,type:'KOOPA'},{x:1800,y:518,type:'GOOMBA'},{x:2200,y:518,type:'KOOPA'},
+               {x:2600,y:518,type:'GOOMBA'},{x:3000,y:518,type:'KOOPA'},
+               {x:170,y:290,type:'KOOPA'},{x:440,y:250,type:'GOOMBA'},{x:980,y:250,type:'KOOPA'},
+               {x:1520,y:250,type:'GOOMBA'},{x:2060,y:250,type:'KOOPA'},{x:2600,y:250,type:'GOOMBA'}],
+      powerUps:[{x:960,y:253,type:'mushroom'},{x:2580,y:253,type:'fireFlower'}],
+      flag:{x:3450,y:550} },
+
+    { bg:'cave', name:'ECHO CHAMBERS',
+      platforms:[
+        {x:0,y:550,w:400,h:50},{x:500,y:480,w:180,h:20},{x:780,y:400,w:180,h:20},
+        {x:1060,y:480,w:180,h:20},{x:1340,y:400,w:180,h:20},{x:1620,y:320,w:180,h:20},
+        {x:1900,y:400,w:180,h:20},{x:2180,y:480,w:180,h:20},{x:2460,y:400,w:180,h:20},
+        {x:2740,y:480,w:180,h:20},{x:3020,y:400,w:180,h:20},{x:3300,y:550,w:300,h:50}
+      ],
+      coins:[{x:150,y:527},{x:560,y:457},{x:840,y:377},{x:1120,y:457},{x:1400,y:377},
+             {x:1680,y:297},{x:1960,y:377},{x:2240,y:457},{x:2520,y:377},{x:2800,y:457},
+             {x:3080,y:377},{x:3360,y:527}],
+      enemies:[{x:120,y:518,type:'GOOMBA'},{x:540,y:448,type:'KOOPA'},{x:820,y:368,type:'GOOMBA'},
+               {x:1100,y:448,type:'KOOPA'},{x:1380,y:368,type:'GOOMBA'},{x:1660,y:288,type:'KOOPA'},
+               {x:1940,y:368,type:'GOOMBA'},{x:2220,y:448,type:'KOOPA'},{x:2500,y:368,type:'GOOMBA'},
+               {x:2780,y:448,type:'KOOPA'},{x:3060,y:368,type:'GOOMBA'}],
+      powerUps:[{x:1640,y:293,type:'mushroom'},{x:2780,y:453,type:'fireFlower'}],
+      flag:{x:3480,y:550} },
+
+    { bg:'boss', name:'BOSS 3 — CAVE CRUSHER', isBossLevel:true,
+      platforms:[
+        {x:0,y:550,w:3500,h:50},
+        {x:350,y:410,w:220,h:20},{x:800,y:350,w:220,h:20},{x:1250,y:410,w:220,h:20},
+        {x:1700,y:350,w:220,h:20},{x:2150,y:410,w:220,h:20},{x:2600,y:350,w:220,h:20},
+        {x:3050,y:410,w:220,h:20}
+      ],
+      enemies:[{x:150,y:518,type:'GOOMBA'},{x:500,y:518,type:'KOOPA'},{x:900,y:518,type:'GOOMBA'},
+               {x:1300,y:518,type:'KOOPA'},{x:1700,y:518,type:'GOOMBA'},{x:2100,y:518,type:'KOOPA'},
+               {x:2500,y:518,type:'GOOMBA'},{x:2900,y:518,type:'KOOPA'},
+               {x:370,y:378,type:'KOOPA'},{x:820,y:318,type:'GOOMBA'},{x:2170,y:378,type:'KOOPA'}],
+      powerUps:[{x:370,y:384,type:'fireFlower'},{x:3070,y:384,type:'fireFlower'}],
+      flag:{x:3360,y:550} },
+
+    // ── WORLD 4 ─────────────────────────────────────────────
+    { bg:'sky', name:'CLOUD KINGDOM',
+      platforms:[
+        {x:0,y:400,w:220,h:20},{x:300,y:360,w:180,h:20},{x:560,y:320,w:180,h:20},
+        {x:820,y:280,w:180,h:20},{x:1080,y:320,w:180,h:20},{x:1340,y:360,w:180,h:20},
+        {x:1600,y:320,w:180,h:20},{x:1860,y:280,w:180,h:20},{x:2120,y:320,w:180,h:20},
+        {x:2380,y:360,w:180,h:20},{x:2640,y:320,w:180,h:20},{x:2900,y:280,w:180,h:20},
+        {x:3160,y:320,w:180,h:20},{x:3420,y:400,w:220,h:20}
+      ],
+      coins:[{x:60,y:377},{x:360,y:337},{x:620,y:297},{x:880,y:257},{x:1140,y:297},
+             {x:1400,y:337},{x:1660,y:297},{x:1920,y:257},{x:2180,y:297},{x:2440,y:337},
+             {x:2700,y:297},{x:2960,y:257},{x:3220,y:297},{x:3480,y:377}],
+      enemies:[{x:50,y:368,type:'KOOPA'},{x:320,y:328,type:'GOOMBA'},{x:580,y:288,type:'KOOPA'},
+               {x:840,y:248,type:'GOOMBA'},{x:1100,y:288,type:'KOOPA'},{x:1360,y:328,type:'GOOMBA'},
+               {x:1620,y:288,type:'KOOPA'},{x:1880,y:248,type:'GOOMBA'},{x:2140,y:288,type:'KOOPA'},
+               {x:2400,y:328,type:'GOOMBA'},{x:2660,y:288,type:'KOOPA'},{x:2920,y:248,type:'GOOMBA'},
+               {x:3180,y:288,type:'KOOPA'}],
+      powerUps:[{x:840,y:253,type:'mushroom'},{x:2900,y:253,type:'fireFlower'}],
+      flag:{x:3520,y:400}, playerStart:{x:60,y:360} },
+
+    { bg:'sky', name:'WIND RIDERS',
+      platforms:[
+        {x:0,y:360,w:200,h:20},{x:280,y:420,w:140,h:20},{x:500,y:360,w:140,h:20},
+        {x:720,y:300,w:140,h:20},{x:940,y:360,w:140,h:20},{x:1160,y:420,w:140,h:20},
+        {x:1380,y:360,w:140,h:20},{x:1600,y:300,w:140,h:20},{x:1820,y:360,w:140,h:20},
+        {x:2040,y:420,w:140,h:20},{x:2260,y:360,w:140,h:20},{x:2480,y:300,w:140,h:20},
+        {x:2700,y:360,w:140,h:20},{x:2920,y:420,w:140,h:20},{x:3140,y:360,w:140,h:20},
+        {x:3360,y:300,w:140,h:20},{x:3580,y:360,w:200,h:20}
+      ],
+      coins:[{x:60,y:337},{x:320,y:397},{x:550,y:337},{x:780,y:277},{x:1010,y:337},
+             {x:1240,y:397},{x:1460,y:337},{x:1680,y:277},{x:1900,y:337},{x:2120,y:397},
+             {x:2340,y:337},{x:2560,y:277},{x:2780,y:337},{x:3000,y:397},{x:3220,y:337},
+             {x:3440,y:277}],
+      enemies:[{x:40,y:328,type:'GOOMBA'},{x:300,y:388,type:'KOOPA'},{x:520,y:328,type:'RANGER'},
+               {x:740,y:268,type:'KOOPA'},{x:960,y:328,type:'GOOMBA'},{x:1180,y:388,type:'KOOPA'},
+               {x:1400,y:328,type:'RANGER'},{x:1620,y:268,type:'KOOPA'},{x:1840,y:328,type:'GOOMBA'},
+               {x:2060,y:388,type:'KOOPA'},{x:2280,y:328,type:'RANGER'},{x:2500,y:268,type:'KOOPA'},
+               {x:2720,y:328,type:'GOOMBA'},{x:2940,y:388,type:'KOOPA'},{x:3160,y:328,type:'RANGER'}],
+      spikes:[{x:720,y:280,w:140,h:20},{x:1600,y:280,w:140,h:20},{x:2480,y:280,w:140,h:20},{x:3360,y:280,w:140,h:20}],
+      turrets:[{x:940,y:338,cooldown:85},{x:2260,y:338,cooldown:80},{x:3580,y:338,cooldown:75}],
+      powerUps:[{x:740,y:273,type:'mushroom'},{x:2480,y:273,type:'fireFlower'}],
+      flag:{x:3680,y:360}, playerStart:{x:60,y:320} },
+
+    { bg:'sky', name:'THUNDERHEAD',
+      platforms:[
+        {x:0,y:550,w:3800,h:50},
+        {x:0,y:380,w:3800,h:20},
+        {x:150,y:260,w:160,h:20},{x:450,y:260,w:160,h:20},{x:750,y:260,w:160,h:20},
+        {x:1050,y:260,w:160,h:20},{x:1350,y:260,w:160,h:20},{x:1650,y:260,w:160,h:20},
+        {x:1950,y:260,w:160,h:20},{x:2250,y:260,w:160,h:20},{x:2550,y:260,w:160,h:20},
+        {x:2850,y:260,w:160,h:20},{x:3150,y:260,w:160,h:20},{x:3450,y:260,w:160,h:20}
+      ],
+      coins:[{x:300,y:527},{x:700,y:527},{x:1100,y:527},{x:1500,y:527},{x:1900,y:527},
+             {x:2300,y:527},{x:2700,y:527},{x:3100,y:527},{x:3500,y:527},
+             {x:300,y:357},{x:700,y:357},{x:1100,y:357},{x:1500,y:357},{x:1900,y:357},
+             {x:2300,y:357},{x:2700,y:357},{x:3100,y:357},
+             {x:210,y:237},{x:810,y:237},{x:1410,y:237},{x:2010,y:237},{x:2610,y:237},{x:3210,y:237}],
+      enemies:[{x:400,y:518,type:'GOOMBA'},{x:900,y:518,type:'KOOPA'},{x:1400,y:518,type:'GOOMBA'},
+               {x:1900,y:518,type:'KOOPA'},{x:2400,y:518,type:'GOOMBA'},{x:2900,y:518,type:'KOOPA'},
+               {x:3400,y:518,type:'GOOMBA'},
+               {x:400,y:348,type:'KOOPA'},{x:900,y:348,type:'GOOMBA'},{x:1400,y:348,type:'KOOPA'},
+               {x:1900,y:348,type:'GOOMBA'},{x:2400,y:348,type:'KOOPA'},{x:2900,y:348,type:'GOOMBA'},
+               {x:470,y:228,type:'KOOPA'},{x:1470,y:228,type:'GOOMBA'},{x:2470,y:228,type:'KOOPA'},{x:3470,y:228,type:'GOOMBA'}],
+      powerUps:[{x:1350,y:233,type:'mushroom'},{x:2850,y:233,type:'fireFlower'}],
+      flag:{x:3680,y:550} },
+
+    { bg:'sky', name:'HEAVEN SPRINT',
+      platforms:[
+        {x:0,y:320,w:200,h:20},{x:280,y:280,w:140,h:20},{x:500,y:240,w:140,h:20},
+        {x:720,y:280,w:140,h:20},{x:940,y:320,w:140,h:20},{x:1160,y:280,w:140,h:20},
+        {x:1380,y:240,w:140,h:20},{x:1600,y:280,w:140,h:20},{x:1820,y:320,w:140,h:20},
+        {x:2040,y:280,w:140,h:20},{x:2260,y:240,w:140,h:20},{x:2480,y:280,w:140,h:20},
+        {x:2700,y:320,w:140,h:20},{x:2920,y:280,w:140,h:20},{x:3140,y:240,w:140,h:20},
+        {x:3360,y:280,w:140,h:20},{x:3580,y:320,w:140,h:20},{x:3800,y:280,w:280,h:20}
+      ],
+      coins:[{x:60,y:297},{x:320,y:257},{x:560,y:217},{x:800,y:257},{x:1060,y:297},
+             {x:1300,y:257},{x:1520,y:217},{x:1760,y:257},{x:2020,y:297},{x:2260,y:257},
+             {x:2500,y:217},{x:2740,y:257},{x:3000,y:297},{x:3240,y:257},{x:3460,y:217},
+             {x:3700,y:257},{x:3920,y:257}],
+      enemies:[{x:40,y:288,type:'KOOPA'},{x:300,y:248,type:'GOOMBA'},{x:520,y:208,type:'KOOPA'},
+               {x:740,y:248,type:'GOOMBA'},{x:960,y:288,type:'KOOPA'},{x:1180,y:248,type:'GOOMBA'},
+               {x:1400,y:208,type:'KOOPA'},{x:1620,y:248,type:'GOOMBA'},{x:1840,y:288,type:'KOOPA'},
+               {x:2060,y:248,type:'GOOMBA'},{x:2280,y:208,type:'KOOPA'},{x:2500,y:248,type:'GOOMBA'},
+               {x:2720,y:288,type:'KOOPA'},{x:2940,y:248,type:'GOOMBA'},{x:3160,y:208,type:'KOOPA'},
+               {x:3380,y:248,type:'GOOMBA'},{x:3820,y:248,type:'KOOPA'}],
+      powerUps:[{x:1380,y:213,type:'mushroom'},{x:3140,y:213,type:'fireFlower'}],
+      flag:{x:3980,y:280}, playerStart:{x:60,y:280} },
+
+    { bg:'boss', name:'BOSS 4 — SKY TYRANT', isBossLevel:true,
+      platforms:[
+        {x:0,y:550,w:3800,h:50},
+        {x:400,y:400,w:240,h:20},{x:900,y:340,w:240,h:20},{x:1400,y:400,w:240,h:20},
+        {x:1900,y:340,w:240,h:20},{x:2400,y:400,w:240,h:20},{x:2900,y:340,w:240,h:20},
+        {x:3400,y:400,w:240,h:20}
+      ],
+      enemies:[{x:150,y:518,type:'KOOPA'},{x:600,y:518,type:'GOOMBA'},{x:1050,y:518,type:'KOOPA'},
+               {x:1500,y:518,type:'GOOMBA'},{x:1950,y:518,type:'KOOPA'},{x:2400,y:518,type:'GOOMBA'},
+               {x:2850,y:518,type:'KOOPA'},{x:3300,y:518,type:'GOOMBA'},
+               {x:420,y:368,type:'KOOPA'},{x:920,y:308,type:'GOOMBA'},{x:2420,y:368,type:'KOOPA'},{x:2920,y:308,type:'GOOMBA'}],
+      powerUps:[{x:420,y:374,type:'fireFlower'},{x:3420,y:374,type:'fireFlower'}],
+      flag:{x:3660,y:550} },
+
+    // ── WORLD 5 ─────────────────────────────────────────────
+    { bg:'sunset', name:'CRIMSON CANYONS',
+      platforms:[
+        {x:0,y:550,w:3800,h:50},
+        {x:200,y:450,w:200,h:20},{x:500,y:390,w:200,h:20},{x:800,y:450,w:200,h:20},
+        {x:1100,y:390,w:200,h:20},{x:1400,y:330,w:200,h:20},{x:1700,y:390,w:200,h:20},
+        {x:2000,y:450,w:200,h:20},{x:2300,y:390,w:200,h:20},{x:2600,y:330,w:200,h:20},
+        {x:2900,y:390,w:200,h:20},{x:3200,y:450,w:200,h:20},{x:3500,y:390,w:200,h:20}
+      ],
+      coins:[{x:100,y:527},{x:600,y:527},{x:1100,y:527},{x:1600,y:527},{x:2100,y:527},
+             {x:2600,y:527},{x:3100,y:527},{x:3600,y:527},
+             {x:260,y:427},{x:560,y:367},{x:860,y:427},{x:1160,y:367},{x:1460,y:307},
+             {x:1760,y:367},{x:2060,y:427},{x:2360,y:367},{x:2660,y:307},{x:2960,y:367},
+             {x:3260,y:427},{x:3560,y:367}],
+      enemies:[{x:200,y:518,type:'KOOPA'},{x:700,y:518,type:'GOOMBA'},{x:1200,y:518,type:'KOOPA'},
+               {x:1700,y:518,type:'GOOMBA'},{x:2200,y:518,type:'KOOPA'},{x:2700,y:518,type:'GOOMBA'},
+               {x:3200,y:518,type:'KOOPA'},{x:3700,y:518,type:'GOOMBA'},
+               {x:280,y:418,type:'GOOMBA'},{x:1180,y:358,type:'KOOPA'},{x:1480,y:298,type:'GOOMBA'},
+               {x:2680,y:298,type:'KOOPA'},{x:3580,y:358,type:'GOOMBA'}],
+      powerUps:[{x:220,y:424,type:'mushroom'},{x:2620,y:304,type:'fireFlower'}],
+      flag:{x:3750,y:550} },
+
+    { bg:'sunset', name:'DUSK TOWERS',
+      platforms:[
+        {x:0,y:550,w:300,h:50},
+        {x:400,y:490,w:120,h:20},{x:620,y:430,w:120,h:20},{x:840,y:370,w:120,h:20},
+        {x:1060,y:310,w:120,h:20},{x:1280,y:370,w:120,h:20},{x:1500,y:430,w:120,h:20},
+        {x:1720,y:490,w:120,h:20},{x:1940,y:550,w:200,h:50},
+        {x:2240,y:490,w:120,h:20},{x:2460,y:430,w:120,h:20},{x:2680,y:370,w:120,h:20},
+        {x:2900,y:310,w:120,h:20},{x:3120,y:370,w:120,h:20},{x:3340,y:430,w:120,h:20},
+        {x:3560,y:490,w:120,h:20},{x:3780,y:550,w:300,h:50}
+      ],
+      coins:[{x:150,y:527},{x:440,y:467},{x:660,y:407},{x:880,y:347},{x:1100,y:287},
+             {x:1320,y:347},{x:1540,y:407},{x:1760,y:467},{x:2050,y:527},
+             {x:2280,y:467},{x:2500,y:407},{x:2720,y:347},{x:2940,y:287},
+             {x:3160,y:347},{x:3380,y:407},{x:3600,y:467},{x:3860,y:527}],
+      enemies:[{x:120,y:518,type:'GOOMBA'},{x:420,y:458,type:'KOOPA'},{x:640,y:398,type:'GOOMBA'},
+               {x:860,y:338,type:'KOOPA'},{x:1080,y:278,type:'GOOMBA'},{x:1300,y:338,type:'KOOPA'},
+               {x:1520,y:398,type:'GOOMBA'},{x:1740,y:458,type:'KOOPA'},{x:2060,y:518,type:'GOOMBA'},
+               {x:2260,y:458,type:'KOOPA'},{x:2480,y:398,type:'GOOMBA'},{x:2700,y:338,type:'KOOPA'},
+               {x:2920,y:278,type:'GOOMBA'},{x:3140,y:338,type:'KOOPA'},{x:3360,y:398,type:'GOOMBA'},
+               {x:3580,y:458,type:'KOOPA'},{x:3860,y:518,type:'GOOMBA'}],
+      powerUps:[{x:1080,y:283,type:'mushroom'},{x:2920,y:283,type:'fireFlower'}],
+      flag:{x:3960,y:550} },
+
+    { bg:'sunset', name:'FIRE RIDGE',
+      platforms:[
+        {x:0,y:550,w:4000,h:50},
+        {x:150,y:430,w:180,h:20},{x:450,y:370,w:180,h:20},{x:750,y:310,w:180,h:20},
+        {x:1050,y:370,w:180,h:20},{x:1350,y:430,w:180,h:20},{x:1650,y:370,w:180,h:20},
+        {x:1950,y:310,w:180,h:20},{x:2250,y:370,w:180,h:20},{x:2550,y:430,w:180,h:20},
+        {x:2850,y:370,w:180,h:20},{x:3150,y:310,w:180,h:20},{x:3450,y:370,w:180,h:20},
+        {x:3750,y:430,w:180,h:20}
+      ],
+      coins:[{x:100,y:527},{x:500,y:527},{x:1000,y:527},{x:1500,y:527},{x:2000,y:527},
+             {x:2500,y:527},{x:3000,y:527},{x:3500,y:527},{x:3900,y:527},
+             {x:210,y:407},{x:510,y:347},{x:810,y:287},{x:1110,y:347},{x:1410,y:407},
+             {x:1710,y:347},{x:2010,y:287},{x:2310,y:347},{x:2610,y:407},
+             {x:2910,y:347},{x:3210,y:287},{x:3510,y:347},{x:3810,y:407}],
+      enemies:[{x:200,y:518,type:'GOOMBA'},{x:600,y:518,type:'KOOPA'},{x:1000,y:518,type:'RANGER'},
+               {x:1400,y:518,type:'KOOPA'},{x:1800,y:518,type:'GOOMBA'},{x:2200,y:518,type:'RANGER'},
+               {x:2600,y:518,type:'GOOMBA'},{x:3000,y:518,type:'KOOPA'},{x:3400,y:518,type:'RANGER'},
+               {x:3800,y:518,type:'KOOPA'},
+               {x:530,y:338,type:'KOOPA'},{x:1730,y:338,type:'RANGER'},{x:2930,y:338,type:'KOOPA'},
+               {x:830,y:278,type:'GOOMBA'},{x:3230,y:278,type:'RANGER'}],
+      spikes:[{x:330,y:530,w:120,h:20},{x:630,y:530,w:120,h:20},{x:930,y:530,w:120,h:20},
+              {x:1230,y:530,w:120,h:20},{x:1530,y:530,w:120,h:20},{x:1830,y:530,w:120,h:20},
+              {x:2130,y:530,w:120,h:20},{x:2430,y:530,w:120,h:20},{x:2730,y:530,w:120,h:20},
+              {x:750,y:290,w:180,h:20},{x:1950,y:290,w:180,h:20},{x:3150,y:290,w:180,h:20}],
+      turrets:[{x:460,y:348,cooldown:75},{x:1060,y:348,cooldown:70},{x:1960,y:288,cooldown:65},{x:2860,y:348,cooldown:70},{x:3460,y:348,cooldown:65}],
+      powerUps:[{x:760,y:283,type:'mushroom'},{x:1960,y:283,type:'fireFlower'},{x:3160,y:283,type:'fireFlower'}],
+      flag:{x:3900,y:550} },
+
+    { bg:'sunset', name:'VOLCANO APPROACH',
+      platforms:[
+        {x:0,y:550,w:300,h:50},{x:400,y:510,w:150,h:20},{x:640,y:460,w:150,h:20},
+        {x:880,y:410,w:150,h:20},{x:1120,y:360,w:150,h:20},{x:1360,y:310,w:150,h:20},
+        {x:1600,y:360,w:150,h:20},{x:1840,y:410,w:150,h:20},{x:2080,y:460,w:150,h:20},
+        {x:2320,y:410,w:150,h:20},{x:2560,y:360,w:150,h:20},{x:2800,y:310,w:150,h:20},
+        {x:3040,y:360,w:150,h:20},{x:3280,y:410,w:150,h:20},{x:3520,y:460,w:150,h:20},
+        {x:3760,y:510,w:150,h:20},{x:4000,y:550,w:300,h:50}
+      ],
+      coins:[{x:150,y:527},{x:455,y:487},{x:695,y:437},{x:935,y:387},{x:1175,y:337},
+             {x:1415,y:287},{x:1655,y:337},{x:1895,y:387},{x:2135,y:437},{x:2375,y:387},
+             {x:2615,y:337},{x:2855,y:287},{x:3095,y:337},{x:3335,y:387},{x:3575,y:437},
+             {x:3815,y:487},{x:4100,y:527}],
+      enemies:[{x:120,y:518,type:'GOOMBA'},{x:430,y:478,type:'KOOPA'},{x:670,y:428,type:'GOOMBA'},
+               {x:910,y:378,type:'KOOPA'},{x:1150,y:328,type:'GOOMBA'},{x:1390,y:278,type:'KOOPA'},
+               {x:1630,y:328,type:'GOOMBA'},{x:1870,y:378,type:'KOOPA'},{x:2110,y:428,type:'GOOMBA'},
+               {x:2350,y:378,type:'KOOPA'},{x:2590,y:328,type:'GOOMBA'},{x:2830,y:278,type:'KOOPA'},
+               {x:3070,y:328,type:'GOOMBA'},{x:3310,y:378,type:'KOOPA'},{x:3550,y:428,type:'GOOMBA'},
+               {x:3790,y:478,type:'KOOPA'}],
+      powerUps:[{x:1370,y:283,type:'mushroom'},{x:2810,y:283,type:'fireFlower'}],
+      flag:{x:4150,y:550} },
+
+    { bg:'boss', name:'BOSS 5 — INFERNO LORD', isBossLevel:true,
+      platforms:[
+        {x:0,y:550,w:4200,h:50},
+        {x:400,y:390,w:260,h:20},{x:950,y:320,w:260,h:20},{x:1500,y:390,w:260,h:20},
+        {x:2050,y:320,w:260,h:20},{x:2600,y:390,w:260,h:20},{x:3150,y:320,w:260,h:20},
+        {x:3700,y:390,w:260,h:20}
+      ],
+      enemies:[{x:150,y:518,type:'KOOPA'},{x:700,y:518,type:'GOOMBA'},{x:1200,y:518,type:'KOOPA'},
+               {x:1700,y:518,type:'GOOMBA'},{x:2200,y:518,type:'KOOPA'},{x:2700,y:518,type:'GOOMBA'},
+               {x:3200,y:518,type:'KOOPA'},{x:3700,y:518,type:'GOOMBA'},{x:4000,y:518,type:'KOOPA'},
+               {x:420,y:358,type:'KOOPA'},{x:970,y:288,type:'GOOMBA'},{x:2070,y:288,type:'KOOPA'},
+               {x:3170,y:288,type:'GOOMBA'},{x:3720,y:358,type:'KOOPA'}],
+      powerUps:[{x:420,y:364,type:'fireFlower'},{x:2070,y:294,type:'fireFlower'},{x:3720,y:364,type:'fireFlower'}],
+      flag:{x:4050,y:550} },
+
+    // ── WORLD 6 — FINAL GAUNTLET ─────────────────────────────
+    { bg:'boss', name:'GAUNTLET I — SPIKE RUN',
+      platforms:[
+        {x:0,y:550,w:4500,h:50},
+        {x:200,y:460,w:140,h:20},{x:440,y:400,w:140,h:20},{x:680,y:340,w:140,h:20},
+        {x:920,y:400,w:140,h:20},{x:1160,y:460,w:140,h:20},{x:1400,y:400,w:140,h:20},
+        {x:1640,y:340,w:140,h:20},{x:1880,y:400,w:140,h:20},{x:2120,y:460,w:140,h:20},
+        {x:2360,y:400,w:140,h:20},{x:2600,y:340,w:140,h:20},{x:2840,y:400,w:140,h:20},
+        {x:3080,y:460,w:140,h:20},{x:3320,y:400,w:140,h:20},{x:3560,y:340,w:140,h:20},
+        {x:3800,y:400,w:140,h:20},{x:4040,y:460,w:140,h:20},{x:4280,y:400,w:140,h:20}
+      ],
+      coins:[{x:100,y:527},{x:500,y:527},{x:1000,y:527},{x:1500,y:527},{x:2000,y:527},
+             {x:2500,y:527},{x:3000,y:527},{x:3500,y:527},{x:4000,y:527},{x:4400,y:527},
+             {x:260,y:437},{x:500,y:377},{x:740,y:317},{x:980,y:377},{x:1220,y:437},
+             {x:1460,y:377},{x:1700,y:317},{x:1940,y:377},{x:2200,y:437},{x:2420,y:377},
+             {x:2660,y:317},{x:2900,y:377},{x:3140,y:437},{x:3380,y:377},{x:3620,y:317},
+             {x:3860,y:377},{x:4100,y:437},{x:4340,y:377}],
+      enemies:[{x:300,y:518,type:'KOOPA'},{x:700,y:518,type:'RANGER'},{x:1100,y:518,type:'KOOPA'},
+               {x:1500,y:518,type:'RANGER'},{x:1900,y:518,type:'KOOPA'},{x:2300,y:518,type:'RANGER'},
+               {x:2700,y:518,type:'KOOPA'},{x:3100,y:518,type:'RANGER'},{x:3500,y:518,type:'KOOPA'},
+               {x:3900,y:518,type:'RANGER'},{x:4200,y:518,type:'KOOPA'},
+               {x:460,y:368,type:'RANGER'},{x:700,y:308,type:'KOOPA'},{x:1420,y:368,type:'RANGER'},
+               {x:1660,y:308,type:'KOOPA'},{x:2380,y:368,type:'RANGER'},{x:2620,y:308,type:'KOOPA'},
+               {x:3340,y:368,type:'RANGER'},{x:3580,y:308,type:'RANGER'}],
+      spikes:[{x:100,y:530,w:100,h:20},{x:340,y:530,w:100,h:20},{x:580,y:530,w:100,h:20},
+              {x:820,y:530,w:100,h:20},{x:1060,y:530,w:100,h:20},{x:1300,y:530,w:100,h:20},
+              {x:1540,y:530,w:100,h:20},{x:1780,y:530,w:100,h:20},{x:2020,y:530,w:100,h:20},
+              {x:2260,y:530,w:100,h:20},{x:2500,y:530,w:100,h:20},{x:2740,y:530,w:100,h:20},
+              {x:2980,y:530,w:100,h:20},{x:3220,y:530,w:100,h:20},{x:3460,y:530,w:100,h:20},
+              {x:3700,y:530,w:100,h:20},{x:3940,y:530,w:100,h:20},{x:4180,y:530,w:100,h:20},
+              {x:680,y:320,w:140,h:20},{x:1640,y:320,w:140,h:20},{x:2600,y:320,w:140,h:20},{x:3560,y:320,w:140,h:20}],
+      turrets:[{x:460,y:438,cooldown:70},{x:920,y:378,cooldown:65},{x:1400,y:378,cooldown:65},
+               {x:1880,y:378,cooldown:60},{x:2360,y:378,cooldown:60},{x:2840,y:378,cooldown:55},
+               {x:3320,y:378,cooldown:55},{x:3800,y:378,cooldown:50},{x:4280,y:378,cooldown:50}],
+      powerUps:[{x:700,y:313,type:'fireFlower'},{x:2600,y:313,type:'fireFlower'},{x:4300,y:374,type:'mushroom'}],
+      flag:{x:4380,y:550} },
+
+    { bg:'boss', name:'GAUNTLET II — CHAOS',
+      platforms:[
+        {x:0,y:550,w:4800,h:50},
+        {x:0,y:390,w:4800,h:20},
+        {x:150,y:270,w:120,h:20},{x:370,y:270,w:120,h:20},{x:590,y:270,w:120,h:20},
+        {x:810,y:270,w:120,h:20},{x:1030,y:270,w:120,h:20},{x:1250,y:270,w:120,h:20},
+        {x:1470,y:270,w:120,h:20},{x:1690,y:270,w:120,h:20},{x:1910,y:270,w:120,h:20},
+        {x:2130,y:270,w:120,h:20},{x:2350,y:270,w:120,h:20},{x:2570,y:270,w:120,h:20},
+        {x:2790,y:270,w:120,h:20},{x:3010,y:270,w:120,h:20},{x:3230,y:270,w:120,h:20},
+        {x:3450,y:270,w:120,h:20},{x:3670,y:270,w:120,h:20},{x:3890,y:270,w:120,h:20},
+        {x:4110,y:270,w:120,h:20},{x:4330,y:270,w:120,h:20},{x:4550,y:270,w:120,h:20}
+      ],
+      coins:[{x:500,y:527},{x:1000,y:527},{x:1500,y:527},{x:2000,y:527},{x:2500,y:527},
+             {x:3000,y:527},{x:3500,y:527},{x:4000,y:527},{x:4500,y:527},
+             {x:500,y:367},{x:1000,y:367},{x:1500,y:367},{x:2000,y:367},{x:2500,y:367},
+             {x:3000,y:367},{x:3500,y:367},{x:4000,y:367},{x:4500,y:367},
+             {x:210,y:247},{x:650,y:247},{x:1090,y:247},{x:1530,y:247},{x:1970,y:247},
+             {x:2410,y:247},{x:2850,y:247},{x:3290,y:247},{x:3730,y:247},{x:4170,y:247}],
+      enemies:[{x:400,y:518,type:'RANGER'},{x:900,y:518,type:'KOOPA'},{x:1400,y:518,type:'RANGER'},
+               {x:1900,y:518,type:'KOOPA'},{x:2400,y:518,type:'RANGER'},{x:2900,y:518,type:'KOOPA'},
+               {x:3400,y:518,type:'RANGER'},{x:3900,y:518,type:'KOOPA'},{x:4400,y:518,type:'RANGER'},
+               {x:400,y:358,type:'KOOPA'},{x:900,y:358,type:'RANGER'},{x:1400,y:358,type:'KOOPA'},
+               {x:1900,y:358,type:'RANGER'},{x:2400,y:358,type:'KOOPA'},{x:2900,y:358,type:'RANGER'},
+               {x:3400,y:358,type:'KOOPA'},{x:3900,y:358,type:'RANGER'},{x:4400,y:358,type:'KOOPA'},
+               {x:650,y:238,type:'RANGER'},{x:1530,y:238,type:'KOOPA'},{x:2410,y:238,type:'RANGER'},
+               {x:3290,y:238,type:'KOOPA'},{x:4170,y:238,type:'RANGER'}],
+      spikes:[{x:0,y:530,w:4800,h:20},
+              {x:270,y:370,w:100,h:20},{x:490,y:370,w:100,h:20},{x:710,y:370,w:100,h:20},
+              {x:930,y:370,w:100,h:20},{x:1150,y:370,w:100,h:20},{x:1370,y:370,w:100,h:20},
+              {x:1590,y:370,w:100,h:20},{x:1810,y:370,w:100,h:20},{x:2030,y:370,w:100,h:20},
+              {x:2250,y:370,w:100,h:20},{x:2470,y:370,w:100,h:20},{x:2690,y:370,w:100,h:20},
+              {x:2910,y:370,w:100,h:20},{x:3130,y:370,w:100,h:20},{x:3350,y:370,w:100,h:20},
+              {x:3570,y:370,w:100,h:20},{x:3790,y:370,w:100,h:20},{x:4010,y:370,w:100,h:20},
+              {x:4230,y:370,w:100,h:20},{x:4450,y:370,w:100,h:20}],
+      turrets:[{x:150,y:248,cooldown:60},{x:590,y:248,cooldown:58},{x:1030,y:248,cooldown:56},
+               {x:1470,y:248,cooldown:54},{x:1910,y:248,cooldown:52},{x:2350,y:248,cooldown:50},
+               {x:2790,y:248,cooldown:50},{x:3230,y:248,cooldown:48},{x:3670,y:248,cooldown:48},
+               {x:4110,y:248,cooldown:45},{x:4550,y:248,cooldown:45}],
+      powerUps:[{x:820,y:244,type:'fireFlower'},{x:2790,y:244,type:'fireFlower'},{x:4330,y:244,type:'mushroom'}],
+      flag:{x:4680,y:550} },
+
+    { bg:'boss', name:'GAUNTLET III — ABYSS',
+      platforms:[
+        {x:0,y:550,w:300,h:50},
+        {x:380,y:490,w:110,h:20},{x:580,y:420,w:110,h:20},{x:780,y:350,w:110,h:20},
+        {x:980,y:280,w:110,h:20},{x:1180,y:350,w:110,h:20},{x:1380,y:420,w:110,h:20},
+        {x:1580,y:490,w:110,h:20},{x:1780,y:420,w:110,h:20},{x:1980,y:350,w:110,h:20},
+        {x:2180,y:280,w:110,h:20},{x:2380,y:350,w:110,h:20},{x:2580,y:420,w:110,h:20},
+        {x:2780,y:490,w:110,h:20},{x:2980,y:420,w:110,h:20},{x:3180,y:350,w:110,h:20},
+        {x:3380,y:280,w:110,h:20},{x:3580,y:350,w:110,h:20},{x:3780,y:420,w:110,h:20},
+        {x:3980,y:490,w:110,h:20},{x:4180,y:420,w:110,h:20},{x:4380,y:350,w:110,h:20},
+        {x:4600,y:550,w:300,h:50}
+      ],
+      coins:[{x:100,y:527},{x:415,y:467},{x:615,y:397},{x:815,y:327},{x:1015,y:257},
+             {x:1215,y:327},{x:1415,y:397},{x:1615,y:467},{x:1815,y:397},{x:2015,y:327},
+             {x:2215,y:257},{x:2415,y:327},{x:2615,y:397},{x:2815,y:467},{x:3015,y:397},
+             {x:3215,y:327},{x:3415,y:257},{x:3615,y:327},{x:3815,y:397},{x:4015,y:467},
+             {x:4215,y:397},{x:4415,y:327},{x:4700,y:527}],
+      enemies:[{x:100,y:518,type:'GOOMBA'},{x:400,y:458,type:'RANGER'},{x:600,y:388,type:'GOOMBA'},
+               {x:800,y:318,type:'RANGER'},{x:1000,y:248,type:'GOOMBA'},{x:1200,y:318,type:'RANGER'},
+               {x:1400,y:388,type:'GOOMBA'},{x:1600,y:458,type:'RANGER'},{x:1800,y:388,type:'GOOMBA'},
+               {x:2000,y:318,type:'RANGER'},{x:2200,y:248,type:'GOOMBA'},{x:2400,y:318,type:'RANGER'},
+               {x:2600,y:388,type:'GOOMBA'},{x:2800,y:458,type:'RANGER'},{x:3000,y:388,type:'GOOMBA'},
+               {x:3200,y:318,type:'RANGER'},{x:3400,y:248,type:'GOOMBA'},{x:3600,y:318,type:'RANGER'},
+               {x:3800,y:388,type:'GOOMBA'},{x:4000,y:458,type:'RANGER'},{x:4200,y:388,type:'GOOMBA'},
+               {x:4400,y:318,type:'RANGER'}],
+      spikes:[{x:380,y:470,w:110,h:20},{x:780,y:330,w:110,h:20},{x:1180,y:330,w:110,h:20},
+              {x:1580,y:470,w:110,h:20},{x:1980,y:330,w:110,h:20},{x:2380,y:330,w:110,h:20},
+              {x:2780,y:470,w:110,h:20},{x:3180,y:330,w:110,h:20},{x:3580,y:330,w:110,h:20},
+              {x:3980,y:470,w:110,h:20},{x:4380,y:330,w:110,h:20}],
+      turrets:[{x:580,y:398,cooldown:55},{x:1380,y:398,cooldown:52},{x:1980,y:328,cooldown:50},
+               {x:2580,y:398,cooldown:50},{x:3180,y:328,cooldown:48},{x:3780,y:398,cooldown:48},
+               {x:4380,y:328,cooldown:45}],
+      powerUps:[{x:985,y:253,type:'fireFlower'},{x:2165,y:253,type:'fireFlower'},{x:3365,y:253,type:'fireFlower'}],
+      flag:{x:4750,y:550} },
+
+    { bg:'boss', name:'GAUNTLET IV — LAST STAND',
+      platforms:[
+        {x:0,y:550,w:5200,h:50},
+        {x:0,y:400,w:5200,h:20},
+        {x:0,y:260,w:5200,h:20},
+        {x:200,y:180,w:160,h:20},{x:500,y:180,w:160,h:20},{x:800,y:180,w:160,h:20},
+        {x:1100,y:180,w:160,h:20},{x:1400,y:180,w:160,h:20},{x:1700,y:180,w:160,h:20},
+        {x:2000,y:180,w:160,h:20},{x:2300,y:180,w:160,h:20},{x:2600,y:180,w:160,h:20},
+        {x:2900,y:180,w:160,h:20},{x:3200,y:180,w:160,h:20},{x:3500,y:180,w:160,h:20},
+        {x:3800,y:180,w:160,h:20},{x:4100,y:180,w:160,h:20},{x:4400,y:180,w:160,h:20},
+        {x:4700,y:180,w:160,h:20}
+      ],
+      coins:[{x:400,y:527},{x:900,y:527},{x:1400,y:527},{x:1900,y:527},{x:2400,y:527},
+             {x:2900,y:527},{x:3400,y:527},{x:3900,y:527},{x:4400,y:527},{x:4900,y:527},
+             {x:400,y:377},{x:900,y:377},{x:1400,y:377},{x:1900,y:377},{x:2400,y:377},
+             {x:2900,y:377},{x:3400,y:377},{x:3900,y:377},{x:4400,y:377},{x:4900,y:377},
+             {x:400,y:237},{x:900,y:237},{x:1400,y:237},{x:1900,y:237},{x:2400,y:237},
+             {x:2900,y:237},{x:3400,y:237},{x:3900,y:237},{x:4400,y:237},
+             {x:260,y:157},{x:860,y:157},{x:1460,y:157},{x:2060,y:157},{x:2660,y:157},
+             {x:3260,y:157},{x:3860,y:157},{x:4460,y:157}],
+      enemies:[{x:500,y:518,type:'RANGER'},{x:1000,y:518,type:'KOOPA'},{x:1500,y:518,type:'RANGER'},
+               {x:2000,y:518,type:'KOOPA'},{x:2500,y:518,type:'RANGER'},{x:3000,y:518,type:'KOOPA'},
+               {x:3500,y:518,type:'RANGER'},{x:4000,y:518,type:'KOOPA'},{x:4500,y:518,type:'RANGER'},
+               {x:500,y:368,type:'RANGER'},{x:1000,y:368,type:'KOOPA'},{x:1500,y:368,type:'RANGER'},
+               {x:2000,y:368,type:'KOOPA'},{x:2500,y:368,type:'RANGER'},{x:3000,y:368,type:'KOOPA'},
+               {x:3500,y:368,type:'RANGER'},{x:4000,y:368,type:'KOOPA'},{x:4500,y:368,type:'RANGER'},
+               {x:500,y:228,type:'RANGER'},{x:1100,y:228,type:'KOOPA'},{x:1700,y:228,type:'RANGER'},
+               {x:2300,y:228,type:'KOOPA'},{x:2900,y:228,type:'RANGER'},{x:3500,y:228,type:'KOOPA'},
+               {x:4100,y:228,type:'RANGER'},{x:4700,y:228,type:'KOOPA'},
+               {x:860,y:148,type:'RANGER'},{x:2060,y:148,type:'KOOPA'},{x:3260,y:148,type:'RANGER'},{x:4460,y:148,type:'KOOPA'}],
+      spikes:[{x:0,y:530,w:5200,h:20},
+              {x:360,y:380,w:140,h:20},{x:660,y:380,w:140,h:20},{x:960,y:380,w:140,h:20},
+              {x:1260,y:380,w:140,h:20},{x:1560,y:380,w:140,h:20},{x:1860,y:380,w:140,h:20},
+              {x:2160,y:380,w:140,h:20},{x:2460,y:380,w:140,h:20},{x:2760,y:380,w:140,h:20},
+              {x:3060,y:380,w:140,h:20},{x:3360,y:380,w:140,h:20},{x:3660,y:380,w:140,h:20},
+              {x:3960,y:380,w:140,h:20},{x:4260,y:380,w:140,h:20},{x:4560,y:380,w:140,h:20},
+              {x:360,y:240,w:140,h:20},{x:960,y:240,w:140,h:20},{x:1560,y:240,w:140,h:20},
+              {x:2160,y:240,w:140,h:20},{x:2760,y:240,w:140,h:20},{x:3360,y:240,w:140,h:20},
+              {x:3960,y:240,w:140,h:20},{x:4560,y:240,w:140,h:20}],
+      turrets:[{x:200,y:158,cooldown:45},{x:500,y:158,cooldown:43},{x:800,y:158,cooldown:42},
+               {x:1100,y:158,cooldown:40},{x:1400,y:158,cooldown:40},{x:1700,y:158,cooldown:38},
+               {x:2000,y:158,cooldown:38},{x:2300,y:158,cooldown:36},{x:2600,y:158,cooldown:36},
+               {x:2900,y:158,cooldown:35},{x:3200,y:158,cooldown:35},{x:3500,y:158,cooldown:33},
+               {x:3800,y:158,cooldown:33},{x:4100,y:158,cooldown:30},{x:4400,y:158,cooldown:30},{x:4700,y:158,cooldown:28}],
+      powerUps:[{x:1100,y:153,type:'fireFlower'},{x:2300,y:153,type:'fireFlower'},{x:3500,y:153,type:'fireFlower'},{x:4700,y:153,type:'mushroom'}],
+      flag:{x:5050,y:550} },
+
+    { bg:'boss', name:'FINAL BOSS — GORDON\'S WRATH', isBossLevel:true,
+      platforms:[
+        {x:0,y:550,w:5000,h:50},
+        {x:400,y:380,w:280,h:20},{x:1000,y:310,w:280,h:20},{x:1600,y:380,w:280,h:20},
+        {x:2200,y:310,w:280,h:20},{x:2800,y:380,w:280,h:20},{x:3400,y:310,w:280,h:20},
+        {x:4000,y:380,w:280,h:20},{x:4600,y:310,w:280,h:20}
+      ],
+      enemies:[{x:200,y:518,type:'KOOPA'},{x:700,y:518,type:'RANGER'},{x:1200,y:518,type:'KOOPA'},
+               {x:1700,y:518,type:'RANGER'},{x:2200,y:518,type:'KOOPA'},{x:2700,y:518,type:'RANGER'},
+               {x:3200,y:518,type:'KOOPA'},{x:3700,y:518,type:'RANGER'},{x:4200,y:518,type:'KOOPA'},
+               {x:4700,y:518,type:'RANGER'},
+               {x:420,y:348,type:'RANGER'},{x:1020,y:278,type:'KOOPA'},{x:1620,y:348,type:'RANGER'},
+               {x:2220,y:278,type:'KOOPA'},{x:2820,y:348,type:'RANGER'},{x:3420,y:278,type:'KOOPA'},
+               {x:4020,y:348,type:'RANGER'},{x:4620,y:278,type:'KOOPA'}],
+      spikes:[{x:200,y:530,w:200,h:20},{x:680,y:530,w:320,h:20},{x:1280,y:530,w:320,h:20},
+              {x:1880,y:530,w:320,h:20},{x:2480,y:530,w:320,h:20},{x:3080,y:530,w:320,h:20},
+              {x:3680,y:530,w:320,h:20},{x:4280,y:530,w:320,h:20},
+              {x:1000,y:288,w:280,h:20},{x:2200,y:288,w:280,h:20},{x:3400,y:288,w:280,h:20},{x:4600,y:288,w:280,h:20}],
+      turrets:[{x:410,y:358,cooldown:60},{x:1010,y:288,cooldown:55},{x:1610,y:358,cooldown:55},
+               {x:2210,y:288,cooldown:50},{x:2810,y:358,cooldown:50},{x:3410,y:288,cooldown:45},
+               {x:4010,y:358,cooldown:45},{x:4610,y:288,cooldown:40}],
+      powerUps:[{x:420,y:354,type:'fireFlower'},{x:2220,y:284,type:'fireFlower'},{x:4020,y:354,type:'fireFlower'},{x:4620,y:284,type:'mushroom'}],
+      flag:{x:4800,y:550} }
+];
+
+// ============================================================
+//  INIT / RESET
+// ============================================================
+function initGame(startLevel) {
+    gState = {score:0, coins:0, tries:1, currentLevel: startLevel||1, over:false, levelComplete:false, cameraX:0};
+    player = mkPlayer(); particles = []; frameCount = 0;
+    movingPlatforms = [];
+    levelStartTime = Date.now();
+    loadLevel(gState.currentLevel); updateHUD();
+    hideLCOverlay();
+    document.getElementById('modal').style.display = 'none';
+    stopGame();
+    gameLoopId = requestAnimationFrame(gameLoop);
+}
+
+function mkPlayer() {
+    return {x:100,y:380,w:32,h:32,velX:0,velY:0,grounded:false,powerUp:'small',invincible:false,invincibleTimer:0,fireTimer:0,fireCooldown:0,facing:1,isRainbow:false,rainbowTimer:0,walkFrame:0,walkTimer:0,doubleJumpUsed:false,wallSliding:false,wallDir:0,wallJumpCooldown:0};
+}
+
+function loadLevel(num) {
+    const lvl = levels[num - 1];
+    if (!lvl) { showModal('🏆 QUEST COMPLETE!',`All 30 levels beaten!\nFinal Score: ${gState.score.toLocaleString()}`,'MAIN MENU','menu'); return; }
+
+    platforms = lvl.platforms.map(p => ({...p}));
+    // Moving platforms — auto-generated per level based on level number
+    movingPlatforms = generateMovingPlatforms(lvl, gState.currentLevel);
+    coinObjs  = lvl.coins    ? lvl.coins.map(c => ({...c, collected:false})) : [];
+    powerUps  = lvl.powerUps ? lvl.powerUps.map(p => ({...p, collected:false})) : [];
+    fireballs = []; bossFireballs = [];
+    spikes = (lvl.spikes||[]).map(s => ({...s}));
+    turrets = (lvl.turrets||[]).map(t => ({...t, cooldown:t.cooldown||90, timer:Math.floor(Math.random()*80)}));
+    turretBullets = []; rangerFireballs = [];
+    levelStartTime = Date.now();
+    secretStarObjs = generateSecretStars(lvl, num);
+    comboCount = 0; comboTimer = 0;
+
+    enemies = (lvl.enemies||[]).map(e => {
+        let pMin = e.patrolMin, pMax = e.patrolMax;
+        if (pMin === undefined) {
+            for (const p of lvl.platforms) {
+                const enemyBottom = e.y + 32;
+                if (e.x + 20 >= p.x && e.x + 12 <= p.x + p.w && Math.abs(enemyBottom - p.y) < 50) {
+                    pMin = p.x + 2;
+                    pMax = p.x + p.w - 34;
+                    break;
+                }
+            }
+        }
+        if (pMin === undefined) { pMin = e.x - 180; pMax = e.x + 180; }
+        return {...e, active:true, dir:1, vy:0, speed:e.type==='KOOPA'?1.2:1.5, pMin, pMax};
+    });
+
+    const start = lvl.playerStart || {x:100, y:380};
+    player.x = start.x; player.y = start.y; player.velX = 0; player.velY = 0; player.grounded = false; player.h = 32;
+    gState.cameraX = 0; gState.levelComplete = false;
+
+    boss = lvl.isBossLevel
+        ? {active:true, x:1500, y:460, w:90, h:90, health:8, maxHealth:8, fireCooldown:70, moveDir:1, moveSpeed:1.3, defeated:false}
+        : {active:false, defeated:false};
+
+    document.getElementById('bossBar').style.display = lvl.isBossLevel ? 'block' : 'none';
+    document.getElementById('bossObjectives').style.display = lvl.isBossLevel ? 'block' : 'none';
+    if (lvl.isBossLevel) updateBossBar();
+    document.getElementById('flagX').textContent = lvl.flag ? lvl.flag.x : 0;
+    updateHUD();
+}
+
+// ============================================================
+//  RAINBOW
+// ============================================================
+function activateRainbow() {
+    if (!player || !gState) return;
+    player.isRainbow = true; player.rainbowTimer = 4020;
+    gState.score += 1000; updateHUD();
+    screenShake(15, 30);
+    spawnParticles(player.x+16, player.y+16, 40, {color:'#ff00ff', size:5, life:50});
+    setTimeout(() => showModal("🌈 GORDON'S AURA!", "Invincible for 67s!\nPress K to fly!", "CLOSE", "close"), 100);
+}
+
+// ============================================================
+//  UPDATE PLAYER
+// ============================================================
+function updatePlayer() {
+    if (gState.over || gState.levelComplete) return;
+    player.velX = 0;
+    const buff = getSkinBuff();
+    const spd = MOVE_SPEED * buff.speed;
+    if (keys['ArrowLeft']||keys['KeyA'])       { player.velX=-spd; player.facing=-1; }
+    else if (keys['ArrowRight']||keys['KeyD']) { player.velX= spd; player.facing= 1; }
+
+    if (player.velX!==0) { player.walkTimer++; if(player.walkTimer>8){player.walkTimer=0;player.walkFrame=(player.walkFrame+1)%4;} } else { player.walkFrame=0; }
+
+    player.velY += GRAVITY;
+    player.x += player.velX; player.y += player.velY;
+    player.h = (player.powerUp==='big'||player.powerUp==='fire') ? 48 : 32;
+
+    player.grounded = false;
+    // Static platforms
+    for (const p of platforms) {
+        if (player.x+player.w>p.x && player.x<p.x+p.w) {
+            const bot = player.y+player.h;
+            if (bot>=p.y && bot<=p.y+30 && player.velY>=0) { player.y=p.y-player.h; player.velY=0; player.grounded=true; }
+        }
+    }
+    // Moving platforms
+    for (const mp of movingPlatforms) {
+        if (player.x+player.w>mp.x && player.x<mp.x+mp.w) {
+            const bot = player.y+player.h;
+            if (bot>=mp.y && bot<=mp.y+24 && player.velY>=0) {
+                player.y = mp.y - player.h;
+                player.velY = 0;
+                player.grounded = true;
+                // Carry: apply the platform's true per-frame displacement
+                player.x += mp.vx;
+                player.y += mp.vy;
+            }
+        }
+    }
+    if (player.grounded) player.doubleJumpUsed = false;
+    if (player.wallJumpCooldown > 0) player.wallJumpCooldown--;
+
+    // Wall slide detection — touching a wall while falling and pressing into it
+    player.wallSliding = false;
+    if (!player.grounded && player.velY > 0) {
+        const pressingLeft  = keys['ArrowLeft']  || keys['KeyA'];
+        const pressingRight = keys['ArrowRight'] || keys['KeyD'];
+        for (const p of platforms) {
+            // Right wall
+            if (pressingRight && player.x + player.w >= p.x && player.x + player.w <= p.x + 8 &&
+                player.y + player.h > p.y + 4 && player.y < p.y + p.h - 4) {
+                player.wallSliding = true; player.wallDir = 1;
+                player.velY = Math.min(player.velY, 2.5); // slow fall
+                break;
+            }
+            // Left wall
+            if (pressingLeft && player.x <= p.x + p.w && player.x >= p.x + p.w - 8 &&
+                player.y + player.h > p.y + 4 && player.y < p.y + p.h - 4) {
+                player.wallSliding = true; player.wallDir = -1;
+                player.velY = Math.min(player.velY, 2.5);
+                break;
+            }
+        }
+    }
+    if (!player.wallSliding) player.wallDir = 0;
+
+    if (player.y > 700) loseLife();
+
+    if (player.invincible) { player.invincibleTimer--; if(player.invincibleTimer<=0){player.invincible=false;player.invincibleTimer=0;} }
+    if (player.powerUp==='fire') {
+        player.fireTimer--;
+        // Blaze & Gilded: fire never expires
+        const b = getSkinBuff();
+        if (b.fireCooldown >= 3.0) player.fireTimer = Math.max(player.fireTimer, 60);
+        if(player.fireTimer<=0){player.powerUp='big';player.fireTimer=0;}
+    }
+    if (player.isRainbow) { player.rainbowTimer--; if(player.rainbowTimer<=0){player.isRainbow=false;player.rainbowTimer=0;} }
+    if (player.fireCooldown>0) player.fireCooldown--;
+
+    // Skin-specific particle trails
+    if (player.velX !== 0 || player.velY !== 0) {
+        const sid = SKINS[activeSkin].id;
+        if (sid === 'ninja' && frameCount % 5 === 0) {
+            spawnParticles(player.x+16, player.y+player.h/2, 2, {color:'rgba(0,0,20,0.7)', size:3, life:14});
+        } else if (sid === 'golden' && frameCount % 4 === 0) {
+            spawnParticles(player.x+16, player.y+player.h, 2, {color:'#ffd700', size:2, life:18});
+        } else if (sid === 'inferno' && player.velX !== 0 && frameCount % 3 === 0) {
+            spawnParticles(player.x + (player.facing>0?0:player.w), player.y+player.h*0.6, 2, {color:'#ff4400', size:2, life:12});
+        }
+    }
+
+    gState.cameraX = Math.max(0, player.x-350);
+    document.getElementById('playerX').textContent = Math.floor(player.x);
+}
+
+// ============================================================
+//  UPDATE ENEMIES
+// ============================================================
+function updateEnemies() {
+    for (const e of enemies) {
+        if (!e.active) continue;
+
+        // FLYER: hovers at baseY, swoops toward player when close
+        if (e.type === 'FLYER') {
+            if (e.baseY === undefined) e.baseY = e.y;
+            e.floatT = (e.floatT||0) + 0.04;
+            const targetY = e.baseY + Math.sin(e.floatT) * 28;
+            const dxP = (player.x+16) - (e.x+16);
+            if (Math.abs(dxP) < 350) {
+                // Swoop toward player horizontally
+                e.x += dxP > 0 ? e.speed * 1.2 : -e.speed * 1.2;
+                e.dir = dxP > 0 ? 1 : -1;
+            } else {
+                e.x += e.speed * e.dir;
+                if (e.x <= e.pMin) { e.x=e.pMin; e.dir=1; }
+                else if (e.x+32 >= e.pMax) { e.x=e.pMax-32; e.dir=-1; }
+            }
+            e.y += (targetY - e.y) * 0.1;
+            if (!player.invincible && player.x+player.w>e.x+4 && player.x<e.x+28 && player.y+player.h>e.y+4 && player.y<e.y+28) {
+                if (player.velY>1 && player.y+player.h<e.y+16) {
+                    e.active=false; player.velY=-9;
+                    const pts=Math.round(250*getSkinBuff().scoreBonus); gState.score+=pts; updateHUD();
+                    screenShake(4,10); spawnParticles(e.x+16,e.y,12,{color:'#00ffcc',size:3,life:22});
+                    addScorePopup(e.x+16,e.y-8,`+${pts}`,'#00ffcc');
+                    registerKill(e.x+16,e.y);
+                    if(!achStats) achStats={};
+                    achStats.totalStomp=(achStats.totalStomp||0)+1; saveAchs(); checkAchievements();
+                    checkBossEnemiesCleared();
+                } else if(player.isRainbow) {
+                    e.active=false;
+                    const pts=Math.round(250*getSkinBuff().scoreBonus); gState.score+=pts; updateHUD();
+                    spawnParticles(e.x+16,e.y,14,{color:'#ff00ff',size:3,life:25});
+                    addScorePopup(e.x+16,e.y-8,`+${pts}`,'#ff88ff');
+                    registerKill(e.x+16,e.y); checkBossEnemiesCleared();
+                } else { hitPlayer(); }
+            }
+            continue;
+        }
+
+        // TANK: armoured, 2 hits, immune to fireballs
+        if (e.type === 'TANK') {
+            if (e.hp === undefined) e.hp = 2;
+            e.x += e.speed * 0.6 * e.dir; // slower
+            let onPlatform = false;
+            for (const p of platforms) {
+                if (e.x+40>p.x && e.x<p.x+p.w) {
+                    const bot = e.y+40;
+                    if (bot>=p.y-5 && bot<=p.y+20 && e.vy>=0) { e.y=p.y-40; e.vy=0; onPlatform=true; break; }
+                }
+            }
+            if (!onPlatform) { e.vy+=GRAVITY*0.7; e.y+=e.vy; if(e.y>700){e.active=false;continue;} } else { e.vy=0; }
+            if (e.x<=e.pMin){e.x=e.pMin;e.dir=1;} else if(e.x+40>=e.pMax){e.x=e.pMax-40;e.dir=-1;}
+            if (!player.invincible && player.x+player.w>e.x+4 && player.x<e.x+36 && player.y+player.h>e.y+4 && player.y<e.y+36) {
+                if (player.velY>1 && player.y+player.h<e.y+18) {
+                    e.hp--; player.velY=-9;
+                    screenShake(6,12); spawnParticles(e.x+20,e.y,14,{color:'#aaa',size:3,life:22});
+                    if (e.hp<=0) {
+                        e.active=false;
+                        const pts=Math.round(400*getSkinBuff().scoreBonus); gState.score+=pts; updateHUD();
+                        addScorePopup(e.x+20,e.y-8,`+${pts}`,'#ffffff');
+                        registerKill(e.x+20,e.y); checkBossEnemiesCleared();
+                        if(!achStats) achStats={};
+                        achStats.totalStomp=(achStats.totalStomp||0)+1; saveAchs(); checkAchievements();
+                    } else {
+                        // Shell breaks — stagger
+                        addScorePopup(e.x+20,e.y-8,'CRACKED!','#ffaa00');
+                        if(e.stunTimer===undefined) e.stunTimer=0;
+                        e.stunTimer=30;
+                    }
+                } else if(player.isRainbow) {
+                    e.active=false;
+                    const pts=Math.round(400*getSkinBuff().scoreBonus); gState.score+=pts; updateHUD();
+                    spawnParticles(e.x+20,e.y,18,{color:'#ff00ff',size:4,life:28});
+                    addScorePopup(e.x+20,e.y-8,`+${pts}`,'#ff88ff');
+                    registerKill(e.x+20,e.y); checkBossEnemiesCleared();
+                } else { hitPlayer(); }
+            }
+            if(e.stunTimer>0) e.stunTimer--;
+            continue;
+        }
+
+        // GOOMBA / KOOPA / RANGER — original logic
+        e.x += e.speed * e.dir;
+        let onPlatform = false;
+        for (const p of platforms) {
+            if (e.x+32>p.x && e.x<p.x+p.w) {
+                const bot = e.y+32;
+                if (bot>=p.y-5 && bot<=p.y+20 && e.vy>=0) {
+                    e.y = p.y-32; e.vy=0; onPlatform=true; break;
+                }
+            }
+        }
+        if (!onPlatform) { e.vy+=GRAVITY*0.7; e.y+=e.vy; if(e.y>700){e.active=false;continue;} } else { e.vy=0; }
+        if (e.x <= e.pMin) { e.x=e.pMin; e.dir=1; }
+        else if (e.x+32 >= e.pMax) { e.x=e.pMax-32; e.dir=-1; }
+
+        if (!player.invincible && player.x+player.w>e.x+4 && player.x<e.x+28 && player.y+player.h>e.y+4 && player.y<e.y+28) {
+            if (player.velY>1 && player.y+player.h<e.y+16) {
+                e.active=false; player.velY=-9;
+                const pts = Math.round(200 * getSkinBuff().scoreBonus);
+                gState.score+=pts; updateHUD();
+                screenShake(4,10); spawnParticles(e.x+16,e.y,10,{color:'#bbb',size:2,life:20});
+                addScorePopup(e.x+16,e.y-8,`+${pts}`,'#ffffff');
+                registerKill(e.x+16, e.y);
+                if (!achStats) achStats = {};
+                achStats.totalStomp = (achStats.totalStomp||0)+1;
+                saveAchs(); checkAchievements();
+                checkBossEnemiesCleared();
+            } else if (player.isRainbow) {
+                e.active=false;
+                const pts = Math.round(200 * getSkinBuff().scoreBonus);
+                gState.score+=pts; updateHUD();
+                spawnParticles(e.x+16,e.y,12,{color:'#ff00ff',size:3,life:25});
+                addScorePopup(e.x+16,e.y-8,`+${pts}`,'#ff88ff');
+                registerKill(e.x+16, e.y);
+                checkBossEnemiesCleared();
+            } else { hitPlayer(); }
+        }
+    }
+}
+
+// ============================================================
+//  UPDATE BOSS
+// ============================================================
+function updateBoss() {
+    if (!boss||!boss.active) return;
+    boss.x += boss.moveSpeed * boss.moveDir;
+    for (const p of platforms) {
+        if (boss.x+boss.w>p.x && boss.x<p.x+p.w && p.h>=40) {
+            if (boss.y+boss.h >= p.y-2) { boss.y=p.y-boss.h; break; }
+        }
+    }
+    if (boss.x<30)   { boss.x=30;   boss.moveDir=1; }
+    if (boss.x>1700) { boss.x=1700; boss.moveDir=-1; }
+
+    boss.fireCooldown--;
+    if (boss.fireCooldown<=0) {
+        bossFireballs.push({x:boss.x+10,y:boss.y+40,vx:-5,vy:0,r:11});
+        bossFireballs.push({x:boss.x+80,y:boss.y+40,vx:5,vy:-2.5,r:11});
+        boss.fireCooldown = Math.max(50,100-(boss.maxHealth-boss.health)*8);
+        screenShake(5,8);
+    }
+    updateBossBar();
+}
+function updateBossBar() {
+    document.getElementById('bossHealth').style.width=`${Math.max(0,boss.health/boss.maxHealth)*100}%`;
+    const lvl = levels[gState.currentLevel-1];
+    if(!lvl||!lvl.isBossLevel) return;
+    const objDiv = document.getElementById('bossObjectives');
+    objDiv.style.display='block';
+    const aliveEnemies = enemies.filter(e=>e.active).length;
+    const bossDefeated = boss.defeated || !boss.active;
+    const flagUnlocked = bossDefeated && aliveEnemies===0;
+    document.getElementById('objBoss').innerHTML =
+        bossDefeated ? '<span style="color:#00ff88">✅ BOSS: DEAD</span>' : '<span style="color:#ff4444">💀 BOSS: ALIVE</span>';
+    document.getElementById('objEnemies').innerHTML =
+        aliveEnemies===0
+            ? '<span style="color:#00ff88">✅ ENEMIES: CLEAR</span>'
+            : `<span style="color:#ffaa00">👾 ENEMIES: ${aliveEnemies}</span>`;
+    document.getElementById('objFlag').innerHTML =
+        flagUnlocked
+            ? '<span style="color:#00e5ff;animation:flagPulse 0.8s infinite alternate">🚩 FLAG: OPEN</span>'
+            : '<span style="color:rgba(255,255,255,0.3)">🚩 FLAG: LOCKED</span>';
+}
+
+// ============================================================
+//  FIREBALLS / COINS / POWER-UPS / FLAG
+// ============================================================
+function updateFireballs() {
+    fireballs = fireballs.filter(f => {
+        f.x+=f.vx; f.y+=f.vy; f.vy+=0.25;
+        if(f.y>545){f.y=545;f.vy=-Math.abs(f.vy)*0.55;}
+        if(boss&&boss.active&&f.x>boss.x&&f.x<boss.x+boss.w&&f.y>boss.y&&f.y<boss.y+boss.h){
+            boss.health--;
+            spawnParticles(boss.x+45,boss.y+32,18,{color:'#ff6600',size:4,life:28});
+            screenShake(8,14); updateBossBar();
+            if(boss.health<=0){
+                boss.active=false;
+                boss.defeated=true;
+                gState.score+=5000; updateHUD();
+                screenShake(20,30);
+                spawnParticles(boss.x+45,boss.y+45,60,{color:'#ff6600',size:5,life:60});
+                spawnParticles(boss.x+45,boss.y+45,40,{color:'#ffd700',size:4,life:50});
+                // Show "now clear enemies!" message if any remain
+                const aliveCount = enemies.filter(e=>e.active).length;
+                if(aliveCount>0){
+                    showBossPhaseMessage(`BOSS DOWN! ${aliveCount} ENEMY${aliveCount>1?'S':''} REMAIN!`);
+                } else {
+                    showBossPhaseMessage('BOSS DOWN! REACH THE FLAG!');
+                }
+            }
+            return false;
+        }
+        for(const e of enemies){
+            if(e.active&&e.type!=='TANK'&&f.x>e.x&&f.x<e.x+32&&f.y>e.y&&f.y<e.y+32){
+                e.active=false;
+                const pts=Math.round(200*getSkinBuff().scoreBonus);
+                gState.score+=pts;updateHUD();
+                spawnParticles(e.x+16,e.y+16,12,{color:'#ff6600',size:3,life:25});
+                addScorePopup(e.x+16,e.y-8,`+${pts}`,'#ff8800');
+                registerKill(e.x+16,e.y);
+                checkBossEnemiesCleared();
+                return false;
+            }
+        }
+        return f.y<650&&f.x>-300&&f.x<3600;
+    });
+    bossFireballs = bossFireballs.filter(f => {
+        f.x+=f.vx; f.y+=f.vy; f.vy+=0.18;
+        if(!player.invincible&&!player.isRainbow&&Math.abs(f.x-(player.x+16))<22&&Math.abs(f.y-(player.y+player.h/2))<22){hitPlayer();return false;}
+        return f.y<650&&f.x>-300;
+    });
+}
+
+function updateCoins() {
+    const mult = getSkinBuff().scoreBonus;
+    for(const c of coinObjs){
+        if(c.collected)continue;
+        if(Math.abs(player.x+16-c.x)<22&&Math.abs(player.y+player.h/2-c.y)<22){
+            c.collected=true; gState.coins++;
+            const pts=Math.round(100*mult); gState.score+=pts; updateHUD();
+            spawnParticles(c.x,c.y,8,{color:'#FFD700',size:2,life:25});
+            addScorePopup(c.x,c.y-10,`+${pts}`,'#FFD700');
+        }
+    }
+}
+
+function updatePowerUps() {
+    for(const p of powerUps){
+        if(p.collected)continue;
+        if(Math.abs(player.x+16-p.x)<28&&Math.abs(player.y+player.h/2-p.y)<28){
+            p.collected=true;
+            if(p.type==='mushroom'){if(player.powerUp==='small'){player.powerUp='big';player.y-=16;}gState.score+=500;}
+            else if(p.type==='fireFlower'){const w=player.powerUp==='small';player.powerUp='fire';player.fireTimer=900;if(w)player.y-=16;gState.score+=1000;}
+            updateHUD();
+            spawnParticles(p.x,p.y,20,{color:p.type==='fireFlower'?'#ff6600':'#ff2222',size:4,life:35});
+        }
+    }
+}
+
+function checkFlag() {
+    const lvl=levels[gState.currentLevel-1];
+    if(!lvl||!lvl.flag) return;
+    // On boss levels: boss must be defeated AND all enemies cleared
+    if(lvl.isBossLevel) {
+        if(boss&&boss.active) return; // boss still alive
+        if(!boss||!boss.defeated) return; // boss not yet killed
+        const aliveEnemies = enemies.filter(e=>e.active).length;
+        if(aliveEnemies>0) return; // enemies still alive
+    } else {
+        if(boss&&boss.active) return;
+    }
+    const f=lvl.flag;
+    if(player.x+player.w>f.x&&player.x<f.x+14) completeLevel();
+}
+
+function checkBossEnemiesCleared() {
+    const lvl = levels[gState.currentLevel-1];
+    if(!lvl||!lvl.isBossLevel) return;
+    const bossDefeated = boss && boss.defeated;
+    const aliveEnemies = enemies.filter(e=>e.active).length;
+    updateBossBar();
+    if(bossDefeated && aliveEnemies===0) {
+        showBossPhaseMessage('🚩 FIELD CLEAR! REACH THE FLAG!');
+        screenShake(12,20);
+        spawnParticles(400,300,50,{color:'#00ff88',size:4,life:55});
+    } else if(bossDefeated && aliveEnemies>0) {
+        showBossPhaseMessage(`${aliveEnemies} ENEM${aliveEnemies>1?'IES':'Y'} LEFT!`);
+    }
+}
+
+function showBossPhaseMessage(msg) {
+    // Flash an in-world message above the player
+    const el = document.createElement('div');
+    el.style.cssText = `
+        position:absolute; left:50%; top:50%; transform:translate(-50%,-60%);
+        font-family:'Press Start 2P',monospace; font-size:13px;
+        color:#ffd700; text-shadow:2px 2px 0 #8B6914, 0 0 20px rgba(255,215,0,0.7);
+        z-index:85; pointer-events:none; text-align:center; line-height:1.8;
+        animation:bossPhaseAnim 2.8s ease forwards; white-space:nowrap;
+    `;
+    el.textContent = msg;
+    const style = document.createElement('style');
+    style.textContent = `@keyframes bossPhaseAnim {
+        0%   { opacity:0; transform:translate(-50%,-70%) scale(0.8); }
+        15%  { opacity:1; transform:translate(-50%,-60%) scale(1.05); }
+        70%  { opacity:1; transform:translate(-50%,-60%) scale(1); }
+        100% { opacity:0; transform:translate(-50%,-50%) scale(0.95); }
+    }`;
+    document.head.appendChild(style);
+    document.getElementById('gameContainer').appendChild(el);
+    setTimeout(() => { el.remove(); style.remove(); }, 2800);
+}
+
+function hitPlayer() {
+    if(player.invincible||player.isRainbow) return;
+    const buff = getSkinBuff();
+    const sid = SKINS[activeSkin].id;
+    if(player.powerUp==='fire'){player.powerUp='big';player.fireTimer=0;}
+    else if(player.powerUp==='big'){player.powerUp='small';player.h=32;player.y+=16;}
+    else{loseLife();return;}
+    if(gState) gState.tookHit = true;
+    player.invincible=true;
+    player.invincibleTimer=130 + buff.invBonus;
+    screenShake(8,15); updateHUD();
+    triggerDamageFlash();
+    // Skin-specific hit effects
+    if(sid==='knight'||sid==='golden'){
+        spawnParticles(player.x+16,player.y+player.h/2,20,{color:'#b0bec5',size:4,life:30});
+        screenShake(12,18);
+    } else if(sid==='robot'){
+        spawnParticles(player.x+16,player.y+player.h/2,16,{color:'#00e5ff',size:3,life:25});
+    } else if(sid==='inferno'){
+        spawnParticles(player.x+16,player.y+player.h/2,14,{color:'#ff4400',size:3,life:22});
+    }
+}
+
+function loseLife() {
+    if(gState.over) return;
+    gState.over=true;
+    screenShake(12,20);
+    spawnParticles(player.x+16,player.y+16,30,{color:'#ff4444',size:4,life:40});
+    setTimeout(()=>{
+        gState.over=false;
+        gState.tries++;
+        gState.score=Math.max(0,gState.score);
+        player.powerUp='small'; player.h=32; player.fireTimer=0;
+        const s=levels[gState.currentLevel-1].playerStart||{x:100,y:380};
+        player.x=s.x; player.y=s.y; player.velX=0; player.velY=0;
+        player.invincible=true; player.invincibleTimer=150;
+        // Reload level enemies/coins/powerups fresh
+        const lvl=levels[gState.currentLevel-1];
+        platforms=lvl.platforms.map(p=>({...p}));
+        coinObjs=lvl.coins?lvl.coins.map(c=>({...c,collected:false})):[];
+        powerUps=lvl.powerUps?lvl.powerUps.map(p=>({...p,collected:false})):[];
+        fireballs=[]; bossFireballs=[]; turretBullets=[]; rangerFireballs=[];
+        spikes=(lvl.spikes||[]).map(s=>({...s}));
+        turrets=(lvl.turrets||[]).map(t=>({...t,cooldown:t.cooldown||90,timer:Math.floor(Math.random()*80)}));
+        movingPlatforms=generateMovingPlatforms(lvl, gState.currentLevel);
+        levelStartTime=Date.now();
+        enemies=(lvl.enemies||[]).map(e=>{
+            let pMin=e.patrolMin,pMax=e.patrolMax;
+            if(pMin===undefined){for(const p of lvl.platforms){const eb=e.y+32;if(e.x+20>=p.x&&e.x+12<=p.x+p.w&&Math.abs(eb-p.y)<50){pMin=p.x+2;pMax=p.x+p.w-34;break;}}}
+            if(pMin===undefined){pMin=e.x-180;pMax=e.x+180;}
+            return{...e,active:true,dir:1,vy:0,speed:e.type==='KOOPA'?1.2:1.5,pMin,pMax};
+        });
+        boss=lvl.isBossLevel?{active:true,x:1500,y:460,w:90,h:90,health:8,maxHealth:8,fireCooldown:70,moveDir:1,moveSpeed:1.3,defeated:false}:{active:false};
+        gState.cameraX=0; gState.levelComplete=false;
+        document.getElementById('bossBar').style.display=lvl.isBossLevel?'block':'none';
+        document.getElementById('bossObjectives').style.display=lvl.isBossLevel?'block':'none';
+        if(lvl.isBossLevel) updateBossBar();
+        updateHUD();
+        hideLCOverlay();
+    }, 900);
+}
+
+function shootFireball() {
+    if(player.fireCooldown>0) return;
+    const buff = getSkinBuff();
+    player.fireCooldown = Math.max(6, Math.floor(28 / buff.fireCooldown));
+    const sx=player.facing>0?player.x+player.w+2:player.x-10;
+    fireballs.push({x:sx,y:player.y+player.h*0.5,vx:player.facing*9,vy:-2,r:8});
+    spawnParticles(sx,player.y+player.h*0.5,6,{color:'#ff6600',size:2,life:15});
+}
+
+function completeLevel() {
+    if(gState.levelComplete) return;
+    gState.levelComplete=true; gState.score+=1000;
+
+    // Track flawless (no hits taken this level = invincibleTimer never triggered by hit)
+    if (!achStats) achStats = {};
+    if (!gState.tookHit) { achStats.flawlessLevel = true; } else { achStats.flawlessLevel = false; }
+
+    // Track boss kills
+    const lvl = levels[gState.currentLevel-1];
+    if (lvl && lvl.isBossLevel) {
+        achStats.totalBossKills = (achStats.totalBossKills||0)+1;
+    }
+
+    // Track total coins
+    achStats.totalCoins = (achStats.totalCoins||0) + gState.coins;
+    saveAchs(); checkAchievements();
+
+    // Save best time
+    const elapsed = Math.floor((Date.now() - levelStartTime) / 1000);
+    const bestKey = `level_${gState.currentLevel}`;
+    if (!bestTimes[bestKey] || elapsed < bestTimes[bestKey]) {
+        bestTimes[bestKey] = elapsed;
+        saveBestTimes();
+        if (timeAttackMode) addScorePopup(400, 280, '🏆 NEW BEST!', '#00ff88');
+    }
+
+    // Save progress
+    levelProgress.completed[gState.currentLevel] = true;
+    if (gState.currentLevel + 1 > levelProgress.highestUnlocked) {
+        levelProgress.highestUnlocked = gState.currentLevel + 1;
+    }
+    saveProgress();
+
+    gState.currentLevel++;
+    updateHUD();
+
+    if(gState.currentLevel > levels.length){
+        // Game complete — still show LC overlay then game complete modal
+        showLCOverlay(true, true);
+    } else {
+        const nextLvl = levels[gState.currentLevel-1];
+        const isBoss = nextLvl && nextLvl.isBossLevel;
+        showLCOverlay(isBoss, false);
+    }
+}
+
+function nextLevel(){
+    gState.tries = 1;
+    loadLevel(gState.currentLevel);
+}
+
+function updateHUD() {
+    document.getElementById('levelDisp').textContent=gState.currentLevel;
+    document.getElementById('scoreDisp').textContent=gState.score.toLocaleString();
+    document.getElementById('coinsDisp').textContent=gState.coins;
+    document.getElementById('livesDisp').textContent=gState.tries||1;
+    document.getElementById('powerDisp').textContent=player.powerUp==='fire'?'FIRE':player.powerUp==='big'?'BIG':'SMALL';
+    const skinEl=document.getElementById('skinDisp');
+    if(skinEl){ skinEl.textContent=SKINS[activeSkin].name; skinEl.style.color=SKINS[activeSkin].colors.hat; }
+    let lines=[];
+    if(player.powerUp==='fire'&&player.fireTimer>0){
+        const isBlazeInfinite = getSkinBuff().fireCooldown>=3.0;
+        lines.push(`<span class="fire-bar">🔥 FIRE: ${isBlazeInfinite?'∞':Math.ceil(player.fireTimer/60)+'s'}</span>`);
+    }
+    if(player.isRainbow) lines.push(`<span class="rainbow-bar">🌈 AURA: ${Math.ceil(player.rainbowTimer/60)}s</span>`);
+    const pb=document.getElementById('powerupBar');pb.innerHTML=lines.join('<br>');pb.style.display=lines.length?'block':'none';
+}
+
+// ============================================================
+//  LEVEL COMPLETE OVERLAY
+// ============================================================
+let lcIsGameComplete = false;
+let lcConfettiRaf = null;
+
+function showLCOverlay(isBoss, isGameComplete) {
+    lcIsGameComplete = isGameComplete;
+    const overlay = document.getElementById('lcOverlay');
+    const completedLevel = gState.currentLevel - 1;
+
+    // Set content
+    if (isGameComplete) {
+        document.getElementById('lcBigText').textContent = '🏆 QUEST COMPLETE!';
+        document.getElementById('lcSubText').textContent = `ALL 30 LEVELS BEATEN!\nFINAL SCORE: ${gState.score.toLocaleString()}`;
+        overlay.classList.remove('boss-clear');
+        document.getElementById('lcContinueBtn').textContent = '▶ MAIN MENU';
+    } else if (isBoss) {
+        const lvlName = levels[gState.currentLevel-1] && levels[gState.currentLevel-1].name ? levels[gState.currentLevel-1].name : `LEVEL ${gState.currentLevel}`;
+        document.getElementById('lcBigText').textContent = '⚠ BOSS INCOMING!';
+        document.getElementById('lcSubText').textContent = `LEVEL ${completedLevel} CLEARED!\n${lvlName}\nSCORE: ${gState.score.toLocaleString()}`;
+        overlay.classList.add('boss-clear');
+        document.getElementById('lcContinueBtn').textContent = '▶ FACE THE BOSS';
+    } else {
+        const lvlName = levels[completedLevel-1] && levels[completedLevel-1].name ? levels[completedLevel-1].name : `LEVEL ${completedLevel}`;
+        document.getElementById('lcBigText').textContent = '🌟 LEVEL COMPLETE!';
+        document.getElementById('lcSubText').textContent = `${lvlName}\nSCORE: ${gState.score.toLocaleString()}`;
+        overlay.classList.remove('boss-clear');
+        document.getElementById('lcContinueBtn').textContent = '▶ NEXT LEVEL';
+    }
+
+    // Star rating based on coins collected
+    const totalCoins = coinObjs.length;
+    const collectedCoins = coinObjs.filter(c=>c.collected).length;
+    const ratio = totalCoins > 0 ? collectedCoins/totalCoins : 1;
+    const stars = ratio >= 0.8 ? 3 : ratio >= 0.4 ? 2 : 1;
+    const starsRow = document.getElementById('lcStarsRow');
+    starsRow.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+        const s = document.createElement('span');
+        s.className = 'lc-star-item';
+        s.textContent = i < stars ? '⭐' : '☆';
+        s.style.opacity = i < stars ? '1' : '0.3';
+        starsRow.appendChild(s);
+    }
+
+    // Tally
+    document.getElementById('lcTallyCoins').textContent = gState.coins;
+    document.getElementById('lcTallyLevel').textContent = completedLevel;
+    document.getElementById('lcTallyScore').textContent = gState.score.toLocaleString();
+
+    // Reset animation state
+    overlay.classList.remove('lc-active');
+    overlay.style.display = 'block';
+    void overlay.offsetWidth; // reflow
+    overlay.classList.add('lc-active');
+
+    // Start confetti
+    startConfetti(isBoss);
+}
+
+function hideLCOverlay() {
+    const overlay = document.getElementById('lcOverlay');
+    overlay.style.display = 'none';
+    overlay.classList.remove('lc-active','boss-clear');
+    stopConfetti();
+}
+
+function lcContinue() {
+    hideLCOverlay();
+    if (lcIsGameComplete) {
+        showMenu();
+    } else {
+        nextLevel();
+    }
+}
+
+// ============================================================
+//  CONFETTI SYSTEM
+// ============================================================
+function startConfetti(isBoss) {
+    stopConfetti();
+    const confettiCanvas = document.getElementById('lcConfetti');
+    const cc = confettiCanvas.getContext('2d');
+    confettiPieces = [];
+    const colors = isBoss
+        ? ['#ff4400','#ff8800','#ff0000','#ffaa00','#cc0000']
+        : ['#FFD700','#ff6688','#00e0ff','#88ff44','#ff88ff','#ffffff','#ffaa00'];
+
+    for (let i = 0; i < 80; i++) {
+        confettiPieces.push({
+            x: Math.random() * 800,
+            y: -10 - Math.random() * 200,
+            w: 6 + Math.random() * 8,
+            h: 3 + Math.random() * 4,
+            vx: (Math.random() - 0.5) * 3,
+            vy: 2 + Math.random() * 3,
+            rot: Math.random() * Math.PI * 2,
+            rotV: (Math.random() - 0.5) * 0.18,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            alpha: 0.85 + Math.random() * 0.15
+        });
+    }
+
+    confettiActive = true;
+    function animateConfetti() {
+        if (!confettiActive) return;
+        cc.clearRect(0, 0, 800, 600);
+        for (const p of confettiPieces) {
+            p.x += p.vx; p.y += p.vy; p.rot += p.rotV;
+            if (p.y > 620) { p.y = -10; p.x = Math.random() * 800; }
+            cc.save();
+            cc.translate(p.x, p.y);
+            cc.rotate(p.rot);
+            cc.globalAlpha = p.alpha;
+            cc.fillStyle = p.color;
+            cc.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+            cc.restore();
+        }
+        lcConfettiRaf = requestAnimationFrame(animateConfetti);
+    }
+    animateConfetti();
+}
+
+function stopConfetti() {
+    confettiActive = false;
+    if (lcConfettiRaf) { cancelAnimationFrame(lcConfettiRaf); lcConfettiRaf = null; }
+    const confettiCanvas = document.getElementById('lcConfetti');
+    confettiCanvas.getContext('2d').clearRect(0, 0, 800, 600);
+}
+
+// ============================================================
+//  PARTICLES / SHAKE
+// ============================================================
+function spawnParticles(x,y,count,opts={}) {
+    const{color='#fff',size=2,life=20}=opts;
+    for(let i=0;i<count;i++) particles.push({x,y,vx:(Math.random()-0.5)*7,vy:(Math.random()-0.5)*7-1,r:size+Math.random()*size,life,maxLife:life,color});
+}
+function updateParticles(){ particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.15;p.life--;p.r*=0.97;return p.life>0;}); }
+function screenShake(i=5,d=10){shake.intensity=i;shake.time=d;}
+function updateShake(){if(shake.time>0){shake.x=(Math.random()-0.5)*shake.intensity;shake.y=(Math.random()-0.5)*shake.intensity;shake.time--;}else{shake.x=0;shake.y=0;}}
+
+// ============================================================
+//  DAMAGE FLASH
+// ============================================================
+// FIX: these two functions were referenced (triggerDamageFlash() from hitPlayer(),
+// updateDamageFlash() from the main game loop) but were never defined anywhere in
+// the original script. Calling the undefined updateDamageFlash() inside gameLoop()
+// threw a ReferenceError on the very first frame, which killed the loop before any
+// draw*() call ran and before requestAnimationFrame() was scheduled again — hence
+// the level screen staying permanently blank as soon as you started a level.
+function triggerDamageFlash() {
+    damageFlashTimer = 12;
+}
+function updateDamageFlash() {
+    const el = document.getElementById('damageFlash');
+    if (!el) return;
+    if (damageFlashTimer > 0) {
+        damageFlashTimer--;
+        el.style.background = `rgba(255,0,0,${(damageFlashTimer/12)*0.35})`;
+    } else {
+        el.style.background = 'rgba(255,0,0,0)';
+    }
+}
+
+// ============================================================
+//  ACHIEVEMENTS (toast + check)
+// ============================================================
+// FIX: checkAchievements() and registerKill()/updateCombo()/drawCombo() and the
+// secret-star functions were called throughout the script but never defined —
+// same class of bug as updateDamageFlash above. Implemented here so the loop
+// doesn't crash on them either.
+function checkAchievements() {
+    for (const a of ACHIEVEMENTS) {
+        if (unlockedAchs.includes(a.id)) continue;
+        if (a.check(achStats)) {
+            unlockedAchs.push(a.id);
+            saveAchs();
+            showAchToast(a);
+        }
+    }
+}
+function showAchToast(a) {
+    const toast = document.getElementById('achToast');
+    document.getElementById('achToastName').textContent = a.name;
+    document.getElementById('achToastDesc').textContent = a.desc;
+    document.getElementById('achToast').querySelector('.ach-toast-top').textContent = `${a.icon} ACHIEVEMENT UNLOCKED`;
+    toast.classList.add('show');
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+function showAchievements() {
+    buildAchGrid();
+    showScreen('achScreen');
+}
+function buildAchGrid() {
+    const grid = document.getElementById('achGrid');
+    if (!grid) return;
+    grid.innerHTML = ACHIEVEMENTS.map(a => {
+        const unlocked = unlockedAchs.includes(a.id);
+        return `<div class="ach-card${unlocked?' unlocked':''}">
+            <div class="ach-icon">${a.icon}</div>
+            <div class="ach-info">
+                <div class="ach-name">${unlocked ? a.name : '???'}</div>
+                <div class="ach-desc">${unlocked ? a.desc : 'LOCKED'}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ── COMBO ──────────────────────────────────────────────────
+function registerKill(x, y) {
+    comboCount++;
+    comboTimer = COMBO_WINDOW;
+    achStats.bestCombo = Math.max(achStats.bestCombo || 0, comboCount);
+    if (comboCount >= 2) {
+        comboPopup = {x, y, text: `${comboCount}x COMBO!`, life: 40, maxLife: 40};
+    }
+}
+function updateCombo() {
+    if (comboTimer > 0) { comboTimer--; if (comboTimer<=0) comboCount = 0; }
+    if (comboPopup) { comboPopup.life--; if (comboPopup.life<=0) comboPopup=null; }
+}
+let comboPopup = null;
+function drawCombo() {
+    if (!comboPopup) return;
+    const t = comboPopup.life / comboPopup.maxLife;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, t*2);
+    ctx.fillStyle = '#ffd700';
+    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 10;
+    ctx.font = 'bold 14px "Press Start 2P"';
+    ctx.textAlign = 'center';
+    ctx.fillText(comboPopup.text, comboPopup.x - gState.cameraX + shake.x, comboPopup.y - 20 + shake.y);
+    ctx.restore();
+    ctx.textAlign = 'left';
+}
+
+// ── SECRET STARS ─────────────────────────────────────────────
+function generateSecretStars(lvl, num) {
+    if (!lvl.flag) return [];
+    // One secret star per level, tucked near the midpoint at a slightly raised offset
+    const midX = lvl.flag.x * 0.55;
+    return [{ x: midX, y: 450, collected:false, levelNum:num }];
+}
+function updateSecretStars() {
+    for (const s of secretStarObjs) {
+        if (s.collected) continue;
+        if (Math.abs(player.x+16-s.x)<20 && Math.abs(player.y+player.h/2-s.y)<20) {
+            s.collected = true;
+            gState.score += 500; updateHUD();
+            spawnParticles(s.x, s.y, 20, {color:'#ffd700', size:3, life:35});
+            addScorePopup(s.x, s.y-10, '⭐ SECRET STAR!', '#ffd700');
+            if (!levelProgress.secretStars) levelProgress.secretStars = {};
+            levelProgress.secretStars[s.levelNum] = (levelProgress.secretStars[s.levelNum]||0) + 1;
+            saveProgress();
+            achStats.totalSecretStars = (achStats.totalSecretStars||0) + 1;
+            saveAchs(); checkAchievements();
+        }
+    }
+}
+function drawSecretStars() {
+    for (const s of secretStarObjs) {
+        if (s.collected) continue;
+        const rx = s.x - gState.cameraX + shake.x, ry = s.y + Math.sin(frameCount*0.06)*6 + shake.y;
+        if (rx < -20 || rx > 820) continue;
+        ctx.save();
+        ctx.translate(rx, ry);
+        ctx.rotate(frameCount*0.03);
+        ctx.fillStyle = '#ffd700';
+        ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 12;
+        ctx.font = '20px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('★', 0, 7);
+        ctx.restore();
+    }
+    ctx.textAlign = 'left';
+}
+
+// ── PAUSE MENU ────────────────────────────────────────────────
+function pauseGame() {
+    if (!gState || gState.over || gState.levelComplete) return;
+    gamePaused = true;
+    document.getElementById('pauseLvl').textContent = gState.currentLevel;
+    document.getElementById('pauseScore').textContent = gState.score.toLocaleString();
+    document.getElementById('pauseSkin').textContent = SKINS[activeSkin].name;
+    document.getElementById('pauseOverlay').style.display = 'flex';
+}
+function resumeGame() {
+    gamePaused = false;
+    document.getElementById('pauseOverlay').style.display = 'none';
+}
+function restartLevel() {
+    document.getElementById('pauseOverlay').style.display = 'none';
+    gamePaused = false;
+    loadLevel(gState.currentLevel);
+}
+function pauseToMenu() {
+    document.getElementById('pauseOverlay').style.display = 'none';
+    gamePaused = false;
+    stopGame();
+    showMenu();
+    showLevelSelect();
+}
+
+// ============================================================
+//  BACKGROUND THEMES
+// ============================================================
+const BG={
+    day:   {sky0:'#1a87d8',sky1:'#6ccbf8',mtn:'#5b8fb9',g0:'#3a7d44',g1:'#5c3d1e'},
+    sunset:{sky0:'#a0522d',sky1:'#ff8c42',mtn:'#7b3f00',g0:'#4a3728',g1:'#2e1e10'},
+    night: {sky0:'#03071e',sky1:'#0a0a3a',mtn:'#0d1b3e',g0:'#1a1a2e',g1:'#0d0d1a'},
+    cave:  {sky0:'#1a0a00',sky1:'#3d1c00',mtn:'#2d1500',g0:'#4b3621',g1:'#2c1a0d'},
+    sky:   {sky0:'#00b4d8',sky1:'#90e0ef',mtn:'#48cae4',g0:null,g1:null},
+    boss:  {sky0:'#1a0000',sky1:'#4a0000',mtn:'#3a0000',g0:'#1a0000',g1:'#0d0000'}
+};
+const cloudOffs=[{x:100,y:80,s:1},{x:360,y:55,s:0.85},{x:630,y:90,s:1.1},{x:900,y:60,s:0.9},{x:1160,y:75,s:1},{x:1420,y:50,s:0.8}];
+
+function drawBackground() {
+    const cx=gState.cameraX,sx=shake.x,sy=shake.y;
+    const lvl=levels[gState.currentLevel-1];
+    const t=BG[lvl&&lvl.bg?lvl.bg:'day'];
+    ctx.clearRect(0,0,800,600);
+    const sg=ctx.createLinearGradient(0,0,0,600);
+    sg.addColorStop(0,t.sky0);sg.addColorStop(0.65,t.sky1);sg.addColorStop(1,t.g0||t.sky1);
+    ctx.fillStyle=sg;ctx.fillRect(0,0,800,600);
+
+    // Animated star tiles for cave bg
+    if(lvl.bg==='cave') {
+        ctx.fillStyle='rgba(255,200,100,0.12)';
+        for(let i=0;i<6;i++){
+            const tx=((i*140-cx*0.05)%900+900)%900;
+            const ty=80+i*60;
+            const blink=Math.sin(frameCount*0.04+i*1.3)*0.5+0.5;
+            ctx.globalAlpha=blink*0.15;
+            ctx.beginPath();ctx.arc(tx+sx,ty+sy,40,0,Math.PI*2);ctx.fill();
+        }
+        ctx.globalAlpha=1;
+    }
+
+    if(lvl.bg==='night'){
+        // Animated twinkling stars
+        for(let i=0;i<30;i++){
+            const stx=((i*113+37)%800);
+            const sty=((i*79+11)%300);
+            const blink=Math.sin(frameCount*0.05+i*0.8)*0.4+0.6;
+            ctx.fillStyle=`rgba(255,255,220,${blink*0.8})`;
+            ctx.fillRect(stx+sx,sty+sy,blink>0.8?2:1,blink>0.8?2:1);
+        }
+        ctx.fillStyle='rgba(255,255,220,0.9)';ctx.shadowColor='#ffffaa';ctx.shadowBlur=25;
+        ctx.beginPath();ctx.arc(680-cx*0.04+sx,68+sy,20,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    } else if(lvl.bg!=='cave'&&lvl.bg!=='sky'){
+        ctx.fillStyle='#fff9c4';ctx.shadowColor='#ffe082';ctx.shadowBlur=30;
+        ctx.beginPath();ctx.arc(700-cx*0.04+sx,66+sy,30,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    }
+
+    if(lvl.bg!=='cave'&&lvl.bg!=='boss'){
+        ctx.fillStyle=lvl.bg==='night'?'rgba(50,50,110,0.4)':'rgba(255,255,255,0.88)';
+        for(const c of cloudOffs){const cx2=((c.x-cx*0.28)%1050+1050)%1050;drawCloud(cx2+sx,c.y+sy,c.s);}
+    }
+
+    ctx.fillStyle=t.mtn;
+    for(let i=0;i<7;i++){const mx=((i*260-cx*0.14)+1800+sx)%1800-200,mh=70+Math.sin(i*1.9)*35;ctx.beginPath();ctx.moveTo(mx,420);ctx.lineTo(mx+130,420-mh);ctx.lineTo(mx+260,420);ctx.fill();}
+
+    // Animated tile ground band
+    if(t.g0){
+        const gg=ctx.createLinearGradient(0,430,0,600);
+        gg.addColorStop(0,t.g0);gg.addColorStop(0.3,t.g1);gg.addColorStop(1,'#0a0500');
+        ctx.fillStyle=gg;ctx.fillRect(0,430,800,170);
+        // animated grass blade shimmer
+        if(lvl.bg==='day'||lvl.bg==='sunset'){
+            for(let i=0;i<20;i++){
+                const bx=((i*44-cx*0.5+frameCount*0.3)%900+900)%900;
+                const sway=Math.sin(frameCount*0.04+i)*3;
+                ctx.strokeStyle='rgba(80,200,60,0.18)';ctx.lineWidth=2;
+                ctx.beginPath();ctx.moveTo(bx+sx,430+sy);ctx.lineTo(bx+sway+sx,420+sy);ctx.stroke();
+            }
+        }
+    }
+
+    if(lvl.bg==='boss'){const gl=Math.sin(frameCount*0.04)*0.06+0.07;ctx.fillStyle=`rgba(255,80,0,${gl})`;ctx.fillRect(0,0,800,600);}
+}
+function drawCloud(x,y,s){ctx.beginPath();ctx.arc(x,y,25*s,0,Math.PI*2);ctx.arc(x+30*s,y-10*s,30*s,0,Math.PI*2);ctx.arc(x+60*s,y,22*s,0,Math.PI*2);ctx.arc(x+30*s,y+10*s,25*s,0,Math.PI*2);ctx.fill();}
+
+function drawPlatforms() {
+    const lvl=levels[gState.currentLevel-1];
+    const isBoss=lvl&&lvl.bg==='boss';
+    for(const p of platforms){
+        const rx=p.x-gState.cameraX+shake.x,ry=p.y+shake.y;
+        if(rx>860||rx+p.w<-10) continue;
+        if(p.h>=40){
+            const g=ctx.createLinearGradient(rx,ry,rx,ry+p.h);
+            if(isBoss){g.addColorStop(0,'#5a0000');g.addColorStop(0.2,'#2a0000');g.addColorStop(1,'#0d0000');}
+            else{g.addColorStop(0,'#4caf50');g.addColorStop(0.17,'#388e3c');g.addColorStop(0.17,'#5d4037');g.addColorStop(1,'#3e2723');}
+            ctx.fillStyle=g;ctx.fillRect(rx,ry,p.w,p.h);
+            ctx.fillStyle=isBoss?'#8a0000':'#66bb6a';
+            for(let tx=0;tx<p.w;tx+=16) ctx.fillRect(rx+tx,ry,Math.min(16,p.w-tx),4);
+        } else {
+            const g=ctx.createLinearGradient(rx,ry,rx,ry+p.h);g.addColorStop(0,'#b87333');g.addColorStop(0.5,'#a0522d');g.addColorStop(1,'#8B4513');
+            ctx.fillStyle=g;ctx.fillRect(rx,ry,p.w,p.h);
+            ctx.fillStyle='#d4a15a';ctx.fillRect(rx,ry,p.w,4);
+            ctx.fillStyle='rgba(0,0,0,0.28)';ctx.fillRect(rx,ry+p.h-4,p.w,4);
+            ctx.strokeStyle='rgba(0,0,0,0.22)';ctx.lineWidth=1;
+            for(let tx=0;tx<p.w;tx+=24){ctx.beginPath();ctx.moveTo(rx+tx,ry);ctx.lineTo(rx+tx,ry+p.h);ctx.stroke();}
+        }
+    }
+}
+
+function drawPlayer() {
+    const rx=player.x-gState.cameraX+shake.x,ry=player.y+shake.y,h=player.h;
+    if(player.invincible&&Math.floor(frameCount/4)%2===0) return;
+    ctx.save();
+    if(player.facing<0){ctx.scale(-1,1);ctx.translate(-rx*2-player.w,0);}
+    if(player.isRainbow){
+        const t=frameCount*0.05,hue=(t*60)%360;
+        ctx.shadowColor=`hsl(${hue},100%,60%)`;ctx.shadowBlur=18;
+        ctx.fillStyle=`hsl(${hue},80%,60%)`;ctx.fillRect(rx+4,ry,24,h);
+        ctx.fillStyle='#ffe0b2';ctx.fillRect(rx+8,ry+h*0.45,16,10);
+        ctx.fillStyle=`hsl(${(hue+180)%360},80%,60%)`;ctx.fillRect(rx,ry,32,h*0.3);
+        ctx.shadowBlur=0;
+        const pulse=1+Math.sin(frameCount*0.15)*0.3;
+        ctx.strokeStyle=`hsl(${hue},100%,70%)`;ctx.lineWidth=3;ctx.globalAlpha=0.6;
+        ctx.beginPath();ctx.ellipse(rx+16,ry+h/2,24*pulse,16*pulse,0,0,Math.PI*2);ctx.stroke();
+        ctx.globalAlpha=1;
+    } else {
+        const sc = getSkinColors();
+        const f=player.powerUp==='fire', b=player.powerUp==='big'||f;
+        // Hat (tinted white when fire powerup)
+        ctx.fillStyle=f?'#ffffff':sc.hat;
+        ctx.fillRect(rx+2,ry,28,b?10:8);
+        ctx.fillRect(rx,ry+(b?10:8),32,b?6:5);
+        // Face
+        ctx.fillStyle=sc.skin;
+        const hY=ry+(b?16:13),hH=b?12:10;
+        ctx.fillRect(rx+6,hY,20,hH);
+        // Eye
+        ctx.fillStyle='#000';ctx.fillRect(rx+20,hY+3,3,4);
+        // Mouth
+        ctx.fillStyle='#4e342e';ctx.fillRect(rx+8,hY+8,16,3);
+        // Body
+        const bY=hY+hH,bH=h-(bY-ry);
+        ctx.fillStyle=f?'#e0e0e0':sc.body;ctx.fillRect(rx+4,bY,24,bH*0.6);
+        ctx.fillStyle=f?'#bbb':sc.body+'cc';ctx.fillRect(rx+4,bY+bH*0.6,24,bH*0.4);
+        // Shoes
+        ctx.fillStyle=sc.shoe;ctx.fillRect(rx+2,ry+h-6,12,6);ctx.fillRect(rx+18,ry+h-6,12,6);
+        // Double-jump sparkle ring
+        if(!player.grounded && !player.doubleJumpUsed && !player.wallSliding) {
+            ctx.globalAlpha=0.35+Math.sin(frameCount*0.25)*0.2;
+            ctx.strokeStyle='#88eeff';ctx.lineWidth=2;
+            ctx.beginPath();ctx.arc(rx+16,ry+h/2,18,0,Math.PI*2);ctx.stroke();
+            ctx.globalAlpha=1;
+        }
+        // Wall-slide sparks
+        if(player.wallSliding) {
+            ctx.globalAlpha=0.6+Math.sin(frameCount*0.4)*0.3;
+            const wx = player.wallDir>0 ? rx+player.w : rx;
+            ctx.strokeStyle='#00e5ff'; ctx.lineWidth=2;
+            ctx.beginPath(); ctx.moveTo(wx, ry+h*0.2); ctx.lineTo(wx, ry+h*0.8); ctx.stroke();
+            if(frameCount%4===0) spawnParticles(wx, ry+h*0.5, 2, {color:'#00e5ff', size:2, life:10});
+            ctx.globalAlpha=1;
+        }
+    }
+    ctx.restore();
+}
+
+function drawCoins(){
+    for(const c of coinObjs){
+        if(c.collected)continue;
+        const rx=c.x-gState.cameraX+shake.x,ry=c.y+shake.y;
+        if(rx<-20||rx>820)continue;
+        const scX=Math.abs(Math.cos(frameCount*0.08+c.x*0.01));
+        ctx.save();ctx.translate(rx,ry);
+        const cg=ctx.createRadialGradient(-3,-3,2,0,0,11);cg.addColorStop(0,'#fff176');cg.addColorStop(0.4,'#fdd835');cg.addColorStop(1,'#f9a825');
+        ctx.fillStyle=cg;ctx.shadowColor='#ffd700';ctx.shadowBlur=8;ctx.scale(scX,1);
+        ctx.beginPath();ctx.arc(0,0,10,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.restore();
+    }
+}
+
+function drawPowerUps(){
+    for(const p of powerUps){
+        if(p.collected)continue;
+        const rx=p.x-gState.cameraX+shake.x,ry=p.y+shake.y+Math.sin(frameCount*0.07+p.x)*3;
+        if(rx<-30||rx>830)continue;
+        if(p.type==='mushroom'){
+            const cg=ctx.createRadialGradient(rx-4,ry-10,3,rx,ry-6,14);cg.addColorStop(0,'#ef9a9a');cg.addColorStop(1,'#c62828');
+            ctx.fillStyle=cg;ctx.beginPath();ctx.arc(rx,ry-6,14,Math.PI,0);ctx.fill();
+            ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(rx-5,ry-10,3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(rx+5,ry-10,3,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#ffe0b2';ctx.fillRect(rx-7,ry-2,14,10);
+            ctx.fillStyle='#000';ctx.fillRect(rx-5,ry+1,3,3);ctx.fillRect(rx+2,ry+1,3,3);
+        } else {
+            ctx.fillStyle='#388e3c';ctx.fillRect(rx-2,ry-10,4,14);
+            const fh=(frameCount*2)%360;ctx.fillStyle=`hsl(${fh},100%,55%)`;ctx.shadowColor=`hsl(${fh},100%,60%)`;ctx.shadowBlur=10;
+            for(let i=0;i<5;i++){const a=(i/5)*Math.PI*2+frameCount*0.05;ctx.beginPath();ctx.arc(rx+Math.cos(a)*8,ry-14+Math.sin(a)*8,5,0,Math.PI*2);ctx.fill();}
+            ctx.shadowBlur=0;ctx.fillStyle='#fff9c4';ctx.beginPath();ctx.arc(rx,ry-14,5,0,Math.PI*2);ctx.fill();
+        }
+    }
+}
+
+function drawEnemies(){
+    for(const e of enemies){
+        if(!e.active)continue;
+        const rx=e.x-gState.cameraX+shake.x,ry=e.y+shake.y;
+        if(rx<-80||rx>900)continue;
+
+        if(e.type==='FLYER'){
+            // Cyan bat-like flyer
+            const wing=Math.sin(frameCount*0.25)*18;
+            ctx.fillStyle='#006064';
+            // wings
+            ctx.beginPath();ctx.ellipse(rx+4,ry+12,14,7,(-Math.PI/6)-wing*0.02,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.ellipse(rx+28,ry+12,14,7,(Math.PI/6)+wing*0.02,0,Math.PI*2);ctx.fill();
+            // body
+            const bg=ctx.createRadialGradient(rx+16,ry+16,3,rx+16,ry+16,14);
+            bg.addColorStop(0,'#00bcd4');bg.addColorStop(1,'#006064');
+            ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(rx+16,ry+16,12,10,0,0,Math.PI*2);ctx.fill();
+            // eyes
+            ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(rx+11,ry+13,4,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.arc(rx+21,ry+13,4,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#f00';ctx.beginPath();ctx.arc(rx+12,ry+13,2,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.arc(rx+22,ry+13,2,0,Math.PI*2);ctx.fill();
+            // glow
+            ctx.shadowColor='#00e5ff';ctx.shadowBlur=8;
+            ctx.strokeStyle='rgba(0,229,255,0.4)';ctx.lineWidth=1.5;
+            ctx.beginPath();ctx.ellipse(rx+16,ry+16,16,14,0,0,Math.PI*2);ctx.stroke();
+            ctx.shadowBlur=0;
+
+        } else if(e.type==='TANK'){
+            const cracked = (e.hp||2) < 2;
+            // shadow
+            ctx.fillStyle='rgba(0,0,0,0.3)';ctx.beginPath();ctx.ellipse(rx+20,ry+42,22,8,0,0,Math.PI*2);ctx.fill();
+            // shell / body
+            const sg=ctx.createRadialGradient(rx+16,ry+18,4,rx+20,ry+20,22);
+            sg.addColorStop(0,cracked?'#8d6e63':'#546e7a');
+            sg.addColorStop(1,cracked?'#4e342e':'#263238');
+            ctx.fillStyle=sg;ctx.beginPath();ctx.ellipse(rx+20,ry+18,20,18,0,0,Math.PI*2);ctx.fill();
+            // shell plates
+            ctx.strokeStyle=cracked?'rgba(150,80,50,0.5)':'rgba(100,150,180,0.4)';ctx.lineWidth=1.5;
+            for(let i=0;i<3;i++){
+                ctx.beginPath();ctx.ellipse(rx+20,ry+18,20-i*5,18-i*5,0,0,Math.PI*2);ctx.stroke();
+            }
+            if(cracked){
+                // crack lines
+                ctx.strokeStyle='rgba(80,40,20,0.8)';ctx.lineWidth=2;
+                ctx.beginPath();ctx.moveTo(rx+12,ry+8);ctx.lineTo(rx+20,ry+20);ctx.lineTo(rx+28,ry+12);ctx.stroke();
+                ctx.beginPath();ctx.moveTo(rx+16,ry+20);ctx.lineTo(rx+10,ry+32);ctx.stroke();
+            }
+            // legs
+            const wo=Math.sin(frameCount*0.15)*4;
+            ctx.fillStyle='#37474f';
+            ctx.beginPath();ctx.ellipse(rx+8,ry+38+wo,9,6,0,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.ellipse(rx+32,ry+38-wo,9,6,0,0,Math.PI*2);ctx.fill();
+            // face
+            ctx.fillStyle='#b0bec5';ctx.beginPath();ctx.ellipse(rx+20,ry+14,10,8,0,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#000';ctx.fillRect(rx+14,ry+11,5,5);ctx.fillRect(rx+21,ry+11,5,5);
+            // HP pips
+            for(let i=0;i<(e.hp||2);i++){
+                ctx.fillStyle=i===0?'#ff5722':'#78909c';
+                ctx.fillRect(rx+14+i*8,ry-8,6,5);
+            }
+
+        } else if(e.type==='GOOMBA'){
+            const g=ctx.createRadialGradient(rx+16,ry+16,4,rx+16,ry+20,20);g.addColorStop(0,'#a0522d');g.addColorStop(1,'#6d3016');
+            ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(rx+16,ry+14,16,14,0,0,Math.PI*2);ctx.fill();
+            const wo=Math.sin(frameCount*0.2)*3;ctx.fillStyle='#3e1a0a';
+            ctx.beginPath();ctx.ellipse(rx+8,ry+29+wo,8,5,0,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.ellipse(rx+24,ry+29-wo,8,5,0,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#fff';ctx.fillRect(rx+6,ry+9,8,6);ctx.fillRect(rx+18,ry+9,8,6);
+            ctx.fillStyle='#000';ctx.fillRect(rx+12,ry+10,4,4);ctx.fillRect(rx+20,ry+10,4,4);
+            ctx.strokeStyle='#000';ctx.lineWidth=2;
+            ctx.beginPath();ctx.moveTo(rx+5,ry+8);ctx.lineTo(rx+14,ry+10);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(rx+18,ry+10);ctx.lineTo(rx+27,ry+8);ctx.stroke();
+        } else if(e.type==='RANGER'){
+            const pulse=1+Math.sin(frameCount*0.12)*0.15;
+            ctx.fillStyle='#4a0080';ctx.beginPath();ctx.ellipse(rx+16,ry+20,14,18,0,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#2d004d';
+            ctx.beginPath();ctx.moveTo(rx+2,ry+16);ctx.lineTo(rx-4,ry+36);ctx.lineTo(rx+36,ry+36);ctx.lineTo(rx+30,ry+16);ctx.closePath();ctx.fill();
+            ctx.fillStyle='#3a0066';ctx.beginPath();ctx.arc(rx+16,ry+10,13,Math.PI,0);ctx.fill();ctx.fillRect(rx+3,ry+10,26,6);
+            ctx.fillStyle='#1a0033';ctx.beginPath();ctx.ellipse(rx+16,ry+14,9,8,0,0,Math.PI*2);ctx.fill();
+            const ec=`rgba(255,100,0,${0.8+Math.sin(frameCount*0.15)*0.2})`;
+            ctx.fillStyle=ec;ctx.shadowColor='#ff6600';ctx.shadowBlur=8*pulse;
+            ctx.beginPath();ctx.arc(rx+11,ry+12,3.5,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.arc(rx+21,ry+12,3.5,0,Math.PI*2);ctx.fill();
+            ctx.shadowBlur=0;
+            ctx.strokeStyle='#8b4513';ctx.lineWidth=3;
+            ctx.beginPath();ctx.moveTo(rx+(e.dir>0?28:4),ry+8);ctx.lineTo(rx+(e.dir>0?34:2),ry+36);ctx.stroke();
+            const oh=frameCount*0.1;ctx.fillStyle=`hsl(${(oh*30)%360},100%,55%)`;
+            ctx.shadowColor=`hsl(${(oh*30)%360},100%,60%)`;ctx.shadowBlur=12;
+            ctx.beginPath();ctx.arc(rx+(e.dir>0?28:4),ry+8,6,0,Math.PI*2);ctx.fill();
+            ctx.shadowBlur=0;
+            if((e.fireCooldown||0)<25&&(e.fireCooldown||0)>0){
+                ctx.fillStyle=`rgba(255,80,0,${0.5+Math.sin(frameCount*0.4)*0.3})`;
+                ctx.beginPath();ctx.arc(rx+16,ry+16,20,0,Math.PI*2);ctx.fill();
+            }
+        } else {
+            // KOOPA
+            ctx.fillStyle='#2e7d32';ctx.beginPath();ctx.ellipse(rx+16,ry+18,15,16,0,0,Math.PI*2);ctx.fill();
+            ctx.strokeStyle='#1b5e20';ctx.lineWidth=1.5;
+            ctx.beginPath();ctx.moveTo(rx+8,ry+10);ctx.lineTo(rx+24,ry+26);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(rx+24,ry+10);ctx.lineTo(rx+8,ry+26);ctx.stroke();
+            const hx=e.dir>0?rx+25:rx+7;
+            ctx.fillStyle='#c8e6c9';ctx.beginPath();ctx.ellipse(hx,ry+8,9,8,0,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#000';ctx.beginPath();ctx.arc(hx+(e.dir>0?2:-2),ry+6,2.5,0,Math.PI*2);ctx.fill();
+            const wo2=Math.sin(frameCount*0.2)*3;ctx.fillStyle='#f9a825';
+            ctx.beginPath();ctx.ellipse(rx+8,ry+33+wo2,7,4,0,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.ellipse(rx+24,ry+33-wo2,7,4,0,0,Math.PI*2);ctx.fill();
+        }
+    }
+}
+
+function drawFireballs(){
+    for(const f of fireballs){const rx=f.x-gState.cameraX+shake.x,ry=f.y+shake.y;ctx.shadowColor='#ff6600';ctx.shadowBlur=12;ctx.fillStyle='#ff9800';ctx.beginPath();ctx.arc(rx,ry,f.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff176';ctx.beginPath();ctx.arc(rx,ry,f.r*0.45,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
+    for(const f of bossFireballs){const rx=f.x-gState.cameraX+shake.x,ry=f.y+shake.y;ctx.shadowColor='#ff0000';ctx.shadowBlur=18;ctx.fillStyle='#ff1744';ctx.beginPath();ctx.arc(rx,ry,f.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ff8a80';ctx.beginPath();ctx.arc(rx,ry,f.r*0.4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
+}
+
+function drawBoss(){
+    if(!boss||!boss.active) return;
+    const rx=boss.x-gState.cameraX+shake.x,ry=boss.y+shake.y;
+    ctx.fillStyle='rgba(255,80,0,0.18)';ctx.beginPath();ctx.ellipse(rx+45,ry+90,58,20,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#880000';ctx.beginPath();ctx.arc(rx+45,ry+45,43,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(180,0,0,0.7)';ctx.lineWidth=2.5;
+    for(let i=0;i<7;i++){const a=(i/7)*Math.PI*2;ctx.beginPath();ctx.arc(rx+45+Math.cos(a)*20,ry+45+Math.sin(a)*20,12,0,Math.PI*2);ctx.stroke();}
+    ctx.fillStyle='#3d0000';
+    for(let i=0;i<8;i++){const a=(i/8)*Math.PI*2+frameCount*0.012;ctx.save();ctx.translate(rx+45+Math.cos(a)*43,ry+45+Math.sin(a)*43);ctx.rotate(a);ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(-6,0);ctx.lineTo(6,0);ctx.closePath();ctx.fill();ctx.restore();}
+    ctx.fillStyle='#ffcc80';ctx.beginPath();ctx.ellipse(rx+45,ry+40,26,20,0,0,Math.PI*2);ctx.fill();
+    const ep=1+Math.sin(frameCount*0.12)*0.6;
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(rx+33,ry+34,9,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(rx+57,ry+34,9,0,Math.PI*2);ctx.fill();
+    ctx.shadowColor='#ff0000';ctx.shadowBlur=12*ep;ctx.fillStyle='#ff0000';
+    ctx.beginPath();ctx.arc(rx+35,ry+34,6*ep,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(rx+59,ry+34,6*ep,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    ctx.fillStyle='#660000';ctx.beginPath();ctx.moveTo(rx+28,ry+52);ctx.quadraticCurveTo(rx+45,ry+68,rx+62,ry+52);ctx.fill();
+    ctx.fillStyle='#fff';ctx.fillRect(rx+31,ry+52,9,12);ctx.fillRect(rx+50,ry+52,9,12);
+    const hpF=boss.health/boss.maxHealth,rc=hpF>0.6?'#ff8800':hpF>0.3?'#ff4400':'#ff0000';
+    ctx.shadowColor=rc;ctx.shadowBlur=22+Math.sin(frameCount*0.1)*10;ctx.strokeStyle=rc;ctx.lineWidth=4;
+    ctx.beginPath();ctx.arc(rx+45,ry+45,48,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;
+}
+
+function drawFlag(){
+    const lvl=levels[gState.currentLevel-1];if(!lvl||!lvl.flag)return;
+    const f=lvl.flag,rx=f.x-gState.cameraX+shake.x,ry=f.y+shake.y;
+    if(rx<-60||rx>870)return;
+    ctx.fillStyle='#9e9e9e';ctx.fillRect(rx-2,ry-110,6,110);
+    ctx.fillStyle='#ef5350';ctx.beginPath();ctx.moveTo(rx+4,ry-110);ctx.lineTo(rx+46,ry-96);ctx.lineTo(rx+4,ry-82);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='14px serif';ctx.fillText('★',rx+12,ry-92);
+    ctx.font='bold 9px "Press Start 2P"';ctx.fillStyle='rgba(255,255,255,0.7)';ctx.textAlign='center';ctx.fillText('GOAL',rx+2,ry-118);ctx.textAlign='left';
+}
+
+function drawParticles(){
+    for(const p of particles){ctx.globalAlpha=(p.life/p.maxLife)*0.88;ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=4;ctx.beginPath();ctx.arc(p.x-gState.cameraX+shake.x,p.y+shake.y,p.r,0,Math.PI*2);ctx.fill();}
+    ctx.globalAlpha=1;ctx.shadowBlur=0;
+}
+
+// ============================================================
+//  SPIKES
+// ============================================================
+function updateSpikes() {
+    if(player.invincible||player.isRainbow) return;
+    for(const s of spikes) {
+        const rx=s.x, ry=s.y;
+        // spike hitbox is inset slightly
+        if(player.x+player.w-4>rx && player.x+4<rx+s.w && player.y+player.h-2>ry+4 && player.y+2<ry+s.h) {
+            hitPlayer();
+            return;
+        }
+    }
+}
+
+// ============================================================
+//  TURRETS
+// ============================================================
+function updateTurrets() {
+    for(const t of turrets) {
+        t.timer--;
+        if(t.timer<=0) {
+            t.timer = t.cooldown||90;
+            // shoot toward player if within 600px
+            const dx = (player.x+16) - (t.x+16);
+            const dy = (player.y+player.h/2) - (t.y+12);
+            const dist = Math.sqrt(dx*dx+dy*dy);
+            if(dist < 650) {
+                const spd = 5;
+                turretBullets.push({x:t.x+16,y:t.y+12,vx:(dx/dist)*spd,vy:(dy/dist)*spd,r:7});
+                spawnParticles(t.x+16,t.y+12,5,{color:'#ff4400',size:2,life:12});
+            }
+        }
+    }
+    turretBullets = turretBullets.filter(b => {
+        b.x+=b.vx; b.y+=b.vy;
+        if(!player.invincible&&!player.isRainbow&&Math.abs(b.x-(player.x+16))<20&&Math.abs(b.y-(player.y+player.h/2))<20){hitPlayer();return false;}
+        // fireballs can destroy turret bullets
+        for(const f of fireballs){if(Math.abs(f.x-b.x)<16&&Math.abs(f.y-b.y)<16){spawnParticles(b.x,b.y,6,{color:'#ff8800',size:2,life:12});return false;}}
+        return b.y<650&&b.y>-50&&b.x>-200&&b.x<6000;
+    });
+}
+
+// ============================================================
+//  RANGER ENEMY FIREBALLS
+// ============================================================
+function updateRangerFireballs() {
+    // Rangers shoot from within enemies array (type==='RANGER')
+    for(const e of enemies) {
+        if(!e.active||e.type!=='RANGER') continue;
+        if(e.fireCooldown===undefined) e.fireCooldown=0;
+        e.fireCooldown--;
+        if(e.fireCooldown<=0) {
+            e.fireCooldown = 120;
+            const dx=(player.x+16)-(e.x+16);
+            const dy=(player.y+player.h/2)-(e.y+16);
+            const dist=Math.sqrt(dx*dx+dy*dy);
+            if(dist<700) {
+                const spd=4.5;
+                rangerFireballs.push({x:e.x+16,y:e.y+10,vx:(dx/dist)*spd,vy:(dy/dist)*spd,r:9,life:180});
+                spawnParticles(e.x+16,e.y+10,6,{color:'#ff6600',size:2,life:15});
+            }
+        }
+    }
+    rangerFireballs = rangerFireballs.filter(f => {
+        f.x+=f.vx; f.y+=f.vy; f.life--;
+        if(!player.invincible&&!player.isRainbow&&Math.abs(f.x-(player.x+16))<20&&Math.abs(f.y-(player.y+player.h/2))<20){hitPlayer();return false;}
+        // player fireballs kill ranger fireballs
+        for(const pf of fireballs){if(Math.abs(pf.x-f.x)<16&&Math.abs(pf.y-f.y)<16){spawnParticles(f.x,f.y,8,{color:'#ffaa00',size:2,life:14});return false;}}
+        return f.life>0&&f.y<650&&f.y>-50&&f.x>-200&&f.x<6000;
+    });
+}
+
+// ============================================================
+//  DRAW SPIKES
+// ============================================================
+function drawSpikes() {
+    const cx=gState.cameraX,sx=shake.x,sy=shake.y;
+    ctx.save();
+    for(const s of spikes) {
+        const rx=s.x-cx+sx, ry=s.y+sy;
+        if(rx>860||rx+s.w<-10) continue;
+        const count = Math.floor(s.w/20);
+        for(let i=0;i<count;i++) {
+            const bx=rx+i*20+10;
+            // spike body
+            ctx.fillStyle='#888';
+            ctx.beginPath();
+            ctx.moveTo(bx-8,ry+s.h);
+            ctx.lineTo(bx,ry);
+            ctx.lineTo(bx+8,ry+s.h);
+            ctx.closePath();
+            ctx.fill();
+            // highlight
+            ctx.fillStyle='#ccc';
+            ctx.beginPath();
+            ctx.moveTo(bx-2,ry+s.h);
+            ctx.lineTo(bx,ry+2);
+            ctx.lineTo(bx+2,ry+s.h);
+            ctx.closePath();
+            ctx.fill();
+            // red glow tip
+            ctx.fillStyle='rgba(255,50,50,0.7)';
+            ctx.beginPath();
+            ctx.arc(bx,ry+2,2.5,0,Math.PI*2);
+            ctx.fill();
+        }
+    }
+    ctx.restore();
+}
+
+// ============================================================
+//  DRAW TURRETS
+// ============================================================
+function drawTurrets() {
+    const cx=gState.cameraX,sx=shake.x,sy=shake.y;
+    for(const t of turrets) {
+        const rx=t.x-cx+sx, ry=t.y+sy;
+        if(rx>870||rx+40<-10) continue;
+        // base
+        const bg=ctx.createLinearGradient(rx,ry+12,rx,ry+36);
+        bg.addColorStop(0,'#555');bg.addColorStop(1,'#222');
+        ctx.fillStyle=bg;
+        ctx.fillRect(rx,ry+12,36,24);
+        ctx.fillStyle='#333';ctx.fillRect(rx+2,ry+14,32,2);
+        // dome
+        const dg=ctx.createRadialGradient(rx+18,ry+14,2,rx+18,ry+14,16);
+        dg.addColorStop(0,'#888');dg.addColorStop(1,'#333');
+        ctx.fillStyle=dg;
+        ctx.beginPath();ctx.arc(rx+18,ry+12,16,Math.PI,0);ctx.fill();
+        // barrel — aim toward player
+        const dx=(player.x+16)-(t.x+18);
+        const dy=(player.y+player.h/2)-(t.y+12);
+        const ang=Math.atan2(dy,dx);
+        ctx.save();ctx.translate(rx+18,ry+12);ctx.rotate(ang);
+        ctx.fillStyle='#666';ctx.fillRect(0,-4,22,8);
+        ctx.fillStyle='#444';ctx.fillRect(18,-5,8,10);
+        ctx.restore();
+        // warning flash when timer < 20
+        if(t.timer<20) {
+            ctx.fillStyle=`rgba(255,0,0,${0.4+Math.sin(t.timer*0.5)*0.3})`;
+            ctx.beginPath();ctx.arc(rx+18,ry+12,18,0,Math.PI*2);ctx.fill();
+        }
+        // eye glow
+        ctx.fillStyle='#ff2200';ctx.shadowColor='#ff4400';ctx.shadowBlur=8;
+        ctx.beginPath();ctx.arc(rx+18,ry+12,4,0,Math.PI*2);ctx.fill();
+        ctx.shadowBlur=0;
+    }
+    // turret bullets
+    for(const b of turretBullets) {
+        const rx=b.x-cx+sx, ry=b.y+sy;
+        ctx.shadowColor='#ff4400';ctx.shadowBlur=10;
+        ctx.fillStyle='#ff6600';ctx.beginPath();ctx.arc(rx,ry,b.r,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#ffcc00';ctx.beginPath();ctx.arc(rx,ry,b.r*0.4,0,Math.PI*2);ctx.fill();
+        ctx.shadowBlur=0;
+    }
+}
+
+// ============================================================
+//  DRAW RANGERS
+// ============================================================
+function drawRangerFireballs() {
+    const cx=gState.cameraX,sx=shake.x,sy=shake.y;
+    for(const f of rangerFireballs) {
+        const rx=f.x-cx+sx, ry=f.y+sy;
+        const pulse=1+Math.sin(frameCount*0.3)*0.2;
+        ctx.shadowColor='#ff8800';ctx.shadowBlur=14;
+        ctx.fillStyle='#ff4400';ctx.beginPath();ctx.arc(rx,ry,f.r*pulse,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#ffdd00';ctx.beginPath();ctx.arc(rx,ry,f.r*0.4*pulse,0,Math.PI*2);ctx.fill();
+        ctx.shadowBlur=0;
+    }
+}
+
+// ============================================================
+//  MOVING PLATFORMS
+// ============================================================
+function generateMovingPlatforms(lvl, levelNum) {
+    if (levelNum < 2) return []; // no moving platforms on level 1
+    const count = Math.min(2 + Math.floor(levelNum / 3), 8);
+    const result = [];
+    const flag = lvl.flag || {x: 2000};
+    const spread = flag.x;
+    for (let i = 0; i < count; i++) {
+        const baseX = 300 + Math.floor(i * (spread / (count + 1)));
+        const baseY = 280 + Math.floor(Math.random() * 200);
+        const horizontal = i % 2 === 0;
+        const speed = 0.8 + (levelNum * 0.06);
+        result.push({
+            x: baseX, y: baseY, w: 100, h: 16,
+            baseX, baseY,
+            range: 80 + Math.floor(Math.random() * 80),
+            speed: horizontal ? speed : speed * 0.7,
+            vx: 0, vy: 0,
+            horizontal,
+            t: Math.random() * Math.PI * 2
+        });
+    }
+    return result;
+}
+
+function updateMovingPlatforms() {
+    for (const mp of movingPlatforms) {
+        const prevX = mp.x, prevY = mp.y;
+        mp.t += 0.02;
+        if (mp.horizontal) {
+            mp.x = mp.baseX + Math.sin(mp.t) * mp.range;
+            mp.y = mp.baseY;
+        } else {
+            mp.x = mp.baseX;
+            mp.y = mp.baseY + Math.sin(mp.t) * mp.range * 0.5;
+        }
+        // Store true per-frame delta for player carry
+        mp.vx = mp.x - prevX;
+        mp.vy = mp.y - prevY;
+    }
+}
+
+function drawMovingPlatforms() {
+    const lvl = levels[gState.currentLevel-1];
+    const isBoss = lvl && lvl.bg === 'boss';
+    for (const mp of movingPlatforms) {
+        const rx = mp.x - gState.cameraX + shake.x, ry = mp.y + shake.y;
+        if (rx > 860 || rx + mp.w < -10) continue;
+        // Glowing edge + wood body
+        ctx.shadowColor = isBoss ? '#ff4400' : '#00e5ff';
+        ctx.shadowBlur = 10;
+        const g = ctx.createLinearGradient(rx, ry, rx, ry + mp.h);
+        if (isBoss) { g.addColorStop(0,'#8b1a00'); g.addColorStop(1,'#3d0800'); }
+        else        { g.addColorStop(0,'#1565c0'); g.addColorStop(1,'#0d47a1'); }
+        ctx.fillStyle = g;
+        ctx.fillRect(rx, ry, mp.w, mp.h);
+        ctx.fillStyle = isBoss ? '#ff6600' : '#00e5ff';
+        ctx.fillRect(rx, ry, mp.w, 3);
+        ctx.fillRect(rx, ry + mp.h - 2, mp.w, 2);
+        ctx.shadowBlur = 0;
+        // Direction arrow
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(mp.horizontal ? '◀ ▶' : '▲ ▼', rx + mp.w/2, ry + mp.h/2 + 3);
+        ctx.textAlign = 'left';
+    }
+}
+
+// ============================================================
+//  SCORE POPUPS
+// ============================================================
+let scorePopups = [];
+function addScorePopup(x, y, text, color='#FFD700') {
+    scorePopups.push({x, y, text, color, life:55, maxLife:55, vy:-1.2});
+}
+function updateScorePopups() {
+    scorePopups = scorePopups.filter(p => { p.y+=p.vy; p.life--; return p.life>0; });
+}
+function drawScorePopups() {
+    for (const p of scorePopups) {
+        const alpha = p.life / p.maxLife;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8 * alpha;
+        ctx.font = `bold ${10 + Math.floor((1-alpha)*4)}px "Press Start 2P"`;
+        ctx.textAlign = 'center';
+        ctx.fillText(p.text, p.x - gState.cameraX + shake.x, p.y + shake.y);
+        ctx.restore();
+    }
+    ctx.textAlign = 'left';
+}
+
+// ============================================================
+//  DAY/NIGHT CYCLE
+// ============================================================
+let dayNightPhase = 0; // 0..1 cycles through day->dusk->night->dawn
+const DAY_CYCLE_SPEED = 0.0003;
+function updateDayNight() {
+    const lvl = levels[gState.currentLevel-1];
+    // Only apply to 'day' and 'sunset' themed levels
+    if (lvl && (lvl.bg === 'day' || lvl.bg === 'sunset')) {
+        dayNightPhase = (dayNightPhase + DAY_CYCLE_SPEED) % 1;
+    }
+}
+function getDayNightOverlay() {
+    const lvl = levels[gState.currentLevel-1];
+    if (!lvl || (lvl.bg !== 'day' && lvl.bg !== 'sunset')) return null;
+    const p = dayNightPhase;
+    // 0.0-0.3: full day (no overlay), 0.3-0.5: dusk (orange), 0.5-0.7: night (dark blue), 0.7-1.0: dawn (purple->clear)
+    if (p < 0.3) return null;
+    if (p < 0.5) {
+        const t = (p-0.3)/0.2;
+        return `rgba(180,80,0,${t*0.35})`;
+    }
+    if (p < 0.7) {
+        const t = (p-0.5)/0.2;
+        const in_ = p<0.6 ? (p-0.5)/0.1 : 1;
+        const out_ = p>0.6 ? (p-0.6)/0.1 : 0;
+        return `rgba(10,10,60,${in_*0.55 - out_*0.15})`;
+    }
+    const t = (p-0.7)/0.3;
+    return `rgba(80,20,100,${(1-t)*0.4})`;
+}
+
+// ============================================================
+//  TIME ATTACK HUD
+// ============================================================
+function drawTimeAttack() {
+    if (!timeAttackMode) return;
+    const elapsed = Math.floor((Date.now() - levelStartTime) / 1000);
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+    const timeStr = `${mins}:${secs.toString().padStart(2,'0')}`;
+    const bestKey = `level_${gState.currentLevel}`;
+    const best = bestTimes[bestKey];
+    const bestStr = best ? `BEST ${Math.floor(best/60)}:${(best%60).toString().padStart(2,'0')}` : 'BEST --:--';
+    ctx.save();
+    ctx.font = '10px "Press Start 2P"';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = elapsed > (best||999) ? '#ff5555' : '#00ff88';
+    ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 8;
+    ctx.fillText(`⏱ ${timeStr}`, 790, 580);
+    ctx.font = '7px "Press Start 2P"';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.shadowBlur = 0;
+    ctx.fillText(bestStr, 790, 594);
+    ctx.textAlign = 'left';
+    ctx.restore();
+}
+
+// ============================================================
+//  GAME LOOP
+// ============================================================
+function gameLoop(){
+    if(!gState) return;
+    if(gamePaused) { gameLoopId=requestAnimationFrame(gameLoop); return; }
+    frameCount++;updateShake();updateDayNight();updateDamageFlash();
+    if(!gState.over&&!gState.levelComplete){
+        updateMovingPlatforms();
+        updatePlayer();updateEnemies();updateCoins();updatePowerUps();updateFireballs();
+        updateSpikes();updateTurrets();updateRangerFireballs();
+        updateSecretStars();updateCombo();updateScorePopups();
+        if(boss&&boss.active) updateBoss();
+        checkFlag();updateParticles();
+        if(frameCount%30===0) updateHUD();
+    } else { updateParticles(); updateScorePopups(); }
+    drawBackground();
+    const dnOverlay=getDayNightOverlay();
+    if(dnOverlay){ctx.fillStyle=dnOverlay;ctx.fillRect(0,0,800,600);}
+    drawMovingPlatforms();
+    drawPlatforms();drawSpikes();drawTurrets();
+    drawCoins();drawPowerUps();drawEnemies();drawFireballs();drawRangerFireballs();
+    if(boss&&boss.active) drawBoss();
+    drawSecretStars();
+    drawFlag();drawPlayer();drawParticles();
+    drawScorePopups();drawCombo();
+    drawTimeAttack();
+    gameLoopId=requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+//  MODAL (kept for game over / errors)
+// ============================================================
+function showModal(title,text,btnLabel,action,showRestart=false){
+    document.getElementById('modalTitle').textContent=title;
+    document.getElementById('modalText').textContent=text;
+    document.getElementById('modalBtn').textContent=btnLabel;
+    modalActionStr=action;
+    document.getElementById('restartBtn').style.display=showRestart?'inline-block':'none';
+    document.getElementById('modal').style.display='flex';
+}
+function handleModalAction(){
+    document.getElementById('modal').style.display='none';
+    if(modalActionStr==='menu') { showMenu(); showLevelSelect(); }
+    else if(modalActionStr==='next') nextLevel();
+    else if(modalActionStr==='restart') initGame();
+    else if(modalActionStr==='close') {}
+}
+function restartFromModal(){document.getElementById('modal').style.display='none';initGame();}

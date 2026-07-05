@@ -1,0 +1,52 @@
+/* ===== GORDON'S GATE STYLE ===== */
+#gg-gate {
+  position: fixed; inset: 0;
+  background: #000;
+  z-index: 999999;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+}
+#gg-gate::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,224,255,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,224,255,0.07) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gg-grid 4s linear infinite;
+}
+@keyframes gg-grid { 0% { background-position: 0 0; } 100% { background-position: 40px 40px; } }
+#gg-gate::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+  pointer-events: none; z-index: 1;
+}
+.gg-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; max-width: 500px; padding: 20px; }
+.gg-skull { font-size: 2.8em; animation: gg-pulse 2s ease-in-out infinite; filter: drop-shadow(0 0 15px #00e0ff); }
+@keyframes gg-pulse { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 10px #00e0ff); } 50% { transform: scale(1.08); filter: drop-shadow(0 0 25px #00ffff); } }
+.gg-title { font-size: 1.8em; color: #00e0ff; letter-spacing: 7px; text-align: center; text-shadow: 0 0 20px #00e0ff, 0 0 40px #00a0ff; animation: gg-flicker 4s infinite alternate; }
+@keyframes gg-flicker { 0%,90%,100% { opacity: 1; } 92% { opacity: 0.4; } 97% { opacity: 0.3; } }
+.gg-subtitle { color: rgba(0,224,255,0.45); font-size: 0.7em; letter-spacing: 4px; text-align: center; }
+.gg-box { width: 100%; background: rgba(0,20,40,0.92); border: 1px solid rgba(0,224,255,0.3); border-radius: 8px; padding: 22px; box-shadow: 0 0 30px rgba(0,224,255,0.12), inset 0 0 20px rgba(0,0,0,0.5); }
+.gg-line { color: rgba(0,224,255,0.55); font-size: 0.72em; margin-bottom: 5px; letter-spacing: 2px; }
+.gg-line.bright { color: #00e0ff; }
+.gg-row { display: flex; align-items: center; gap: 10px; margin-top: 13px; border-top: 1px solid rgba(0,224,255,0.15); padding-top: 13px; }
+.gg-prompt { color: #00e0ff; font-size: 0.95em; white-space: nowrap; text-shadow: 0 0 8px #00e0ff; }
+#gg-input { background: transparent; border: none; outline: none; color: #00ffff; font-family: 'Courier New', monospace; font-size: 0.95em; flex: 1; letter-spacing: 4px; text-shadow: 0 0 8px #00ffff; caret-color: #00e0ff; }
+#gg-input::placeholder { color: rgba(0,224,255,0.2); letter-spacing: 2px; font-size: 0.85em; }
+#gg-btn { background: transparent; border: 1px solid rgba(0,224,255,0.5); color: #00e0ff; font-family: 'Courier New', monospace; font-size: 0.72em; letter-spacing: 2px; padding: 6px 13px; border-radius: 3px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+#gg-btn:hover { background: rgba(0,224,255,0.15); box-shadow: 0 0 12px rgba(0,224,255,0.4); }
+#gg-denied { color: #ff2244; font-size: 0.82em; letter-spacing: 4px; text-align: center; text-shadow: 0 0 10px #ff2244; height: 20px; opacity: 0; transition: opacity 0.2s; }
+#gg-denied.show { opacity: 1; }
+#gg-granted { color: #00ff88; font-size: 1em; letter-spacing: 5px; text-align: center; text-shadow: 0 0 20px #00ff88; opacity: 0; transition: opacity 0.3s; height: 28px; }
+#gg-granted.show { opacity: 1; }
+.gg-hint { color: rgba(0,224,255,0.22); font-size: 0.62em; letter-spacing: 3px; text-align: center; }
+.gg-shake { animation: gg-shk 0.4s cubic-bezier(.36,.07,.19,.97) both !important; }
+@keyframes gg-shk { 10%,90% { transform: translateX(-4px); } 20%,80% { transform: translateX(6px); } 30%,50%,70% { transform: translateX(-6px); } 40%,60% { transform: translateX(6px); } }
+.gg-glitch { animation: gg-gl 0.4s steps(1) both !important; }
+@keyframes gg-gl { 0% { filter: none; } 20% { filter: hue-rotate(90deg) brightness(2); clip-path: inset(10% 0 80% 0); } 40% { filter: hue-rotate(180deg) brightness(0.5); clip-path: inset(60% 0 10% 0); } 60% { filter: hue-rotate(270deg) brightness(2); clip-path: inset(30% 0 50% 0); } 80% { filter: hue-rotate(360deg); clip-path: none; } 100% { filter: none; clip-path: none; } }
+.gg-unlock { animation: gg-ul 1s ease forwards !important; }
+@keyframes gg-ul { 0% { opacity: 1; filter: none; } 30% { filter: brightness(3) saturate(2); } 60% { filter: brightness(5) hue-rotate(90deg); transform: scale(1.02); } 100% { opacity: 0; transform: scale(1.05); filter: brightness(10); } }
